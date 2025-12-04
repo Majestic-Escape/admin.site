@@ -68,7 +68,7 @@ export default function GuestsPage() {
     const data = JSON.parse(getLocalData);
     if (data) {
       fetch(
-        `${API_URL}/guests?search=${searchTerm}&limit=${rowsPerPage}&skip=${rowsPerPage * skip}`,
+        `${API_URL}/guests/?search=${searchTerm}&limit=${rowsPerPage}&skip=${rowsPerPage * skip}`,
         {
           method: "GET",
           headers: {
@@ -447,12 +447,12 @@ export default function GuestsPage() {
                             </span>
                           </TableCell>
                           <TableCell>
-                            <Button
+                            {/* <Button
                               onClick={() => handleDeleteClick(guest._id)}
                               variant="danger"
                             >
                               Delete
-                            </Button>
+                            </Button> */}
                             <Button
                               size="sm"
                               variant="outline"

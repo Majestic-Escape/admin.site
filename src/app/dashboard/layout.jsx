@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link";
 import * as React from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Sidebar } from "@/components/sidebar";
@@ -16,8 +16,53 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Bell, Search, Settings, HelpCircle, LogOut } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
+import { useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
+import { useRouter } from "next/navigation";
 export default function DashboardLayout({ children }) {
+  const [isAuth, setIsAuth] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const auth = async () => {
+    const getLocalData = await localStorage.getItem("token");
+    const data = JSON.parse(getLocalData);
+    if (data) {
+      setIsAuth(true);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    auth();
+  }, []);
+
+  if (!isAuth) {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center font-poppins pt-24">
+          You are not authorized to access this page. &nbsp;{" "}
+          <Link href="/login">
+            <u>
+              <b>Click Here</b>
+            </u>
+          </Link>
+          &nbsp; to log in now to access.
+        </div>
+      </>
+    );
+  }
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-20 w-20 animate-spin rounded-full border-b-2 border-current"></div>
+      </div>
+    );
+  }
   return (
     <SidebarProvider>
       <div className="flex min-h-screen overflow-hidden w-screen">
@@ -72,9 +117,16 @@ export default function DashboardLayout({ children }) {
                     <span>Help</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      logout();
+
+                      localStorage.clear();
+                      router.push("/");
+                    }}
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
+                    <span on>Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

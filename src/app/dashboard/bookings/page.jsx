@@ -209,7 +209,7 @@ export default function BookingsPage() {
     if (data) {
       try {
         const response = await fetch(
-          `${API_URL}/booking/analytics-filter?search=${searchTerm}&status=${activeTab}&from=${from}&to=${to}`,
+          `${API_URL}/booking/admin/analytics-filter?search=${searchTerm}&status=${activeTab}&from=${from}&to=${to}`,
           {
             method: "GET",
             headers: {
@@ -235,19 +235,22 @@ export default function BookingsPage() {
     }
   };
 
-  const fetchProperty = async () => {
+  const fetchProperty = async (hostId) => {
     const getLocalData = await localStorage.getItem("token");
     const data = JSON.parse(getLocalData);
 
     if (data) {
       try {
-        const response = await fetch(`${API_URL}/properties/id-and-name`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${data}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await fetch(
+          `${API_URL}/properties/id-and-name/${hostId}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${data}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
         if (response.status === 401) {
           // Token expired or missing
           localStorage.removeItem("token");
@@ -266,9 +269,9 @@ export default function BookingsPage() {
     fetchData();
   }, [searchTerm, activeTab, date]);
 
-  React.useEffect(() => {
-    fetchProperty();
-  }, []);
+  // React.useEffect(() => {
+  //   fetchProperty();
+  // }, []);
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -461,6 +464,8 @@ export default function BookingsPage() {
     };
 
     const handleModifyModal = (booking) => {
+      console.log("what sd is", booking?.hostId?._id);
+      fetchProperty(booking?.hostId?._id);
       setModifyDialogOpen(true);
 
       setBookingId(booking._id);

@@ -152,6 +152,10 @@ const approveListing = async (listingId) => {
       if (!response.status == 200) {
         throw new error("Something is wrong");
       }
+      const result = await response.json();
+      if (result.data == "hostDelist") {
+        toast.error("Host has delisted this property");
+      }
 
       return response.data;
     }
@@ -207,9 +211,9 @@ export function ListingsTable() {
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
   const [rowSelection, setRowSelection] = useState({});
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  // const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
-  const [listingToDelete, setListingToDelete] = useState(null);
+  // const [listingToDelete, setListingToDelete] = useState(null);
   const [listingToApprove, setListingToApprove] = useState(null);
   const [listingToDelist, setListingToDelist] = useState(null);
   const [delistDialogOpen, setDelistDialogOpen] = useState(false);
@@ -300,45 +304,45 @@ export function ListingsTable() {
     }
   };
 
-  const handleDeleteClick = useCallback((listing) => {
-    setListingToDelete(listing);
-    setDeleteDialogOpen(true);
-  }, []);
+  // const handleDeleteClick = useCallback((listing) => {
+  //   setListingToDelete(listing);
+  //   setDeleteDialogOpen(true);
+  // }, []);
 
-  const handleConfirmDelete = useCallback(async () => {
-    if (listingToDelete) {
-      const getLocalData = await localStorage.getItem("token");
-      const data = JSON.parse(getLocalData);
-      if (data) {
-        try {
-          const response = await fetch(
-            `${API_URL}/properties/user-property/${listingToDelete._id}`,
-            {
-              method: "DELETE",
-              headers: {
-                Authorization: `Bearer ${data}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+  // const handleConfirmDelete = useCallback(async () => {
+  //   if (listingToDelete) {
+  //     const getLocalData = await localStorage.getItem("token");
+  //     const data = JSON.parse(getLocalData);
+  //     if (data) {
+  //       try {
+  //         const response = await fetch(
+  //           `${API_URL}/properties/user-property/${listingToDelete._id}`,
+  //           {
+  //             method: "DELETE",
+  //             headers: {
+  //               Authorization: `Bearer ${data}`,
+  //               "Content-Type": "application/json",
+  //             },
+  //           }
+  //         );
 
-          if (!response.ok) {
-            throw new Error("Failed to delete the listing");
-          }
+  //         if (!response.ok) {
+  //           throw new Error("Failed to delete the listing");
+  //         }
 
-          setData((prevData) =>
-            prevData?.filter((item) => item._id !== listingToDelete._id)
-          );
-          setDeleteDialogOpen(false);
-          setListingToDelete(null);
-          toast.success("Listing deleted successfully");
-        } catch (error) {
-          console.error("Failed to delete listing:", error);
-          toast.error("Failed to delete listing");
-        }
-      }
-    }
-  }, [listingToDelete]);
+  //         setData((prevData) =>
+  //           prevData?.filter((item) => item._id !== listingToDelete._id)
+  //         );
+  //         setDeleteDialogOpen(false);
+  //         setListingToDelete(null);
+  //         toast.success("Listing deleted successfully");
+  //       } catch (error) {
+  //         console.error("Failed to delete listing:", error);
+  //         toast.error("Failed to delete listing");
+  //       }
+  //     }
+  //   }
+  // }, [listingToDelete]);
 
   const handleBulkApprove = async () => {
     const selectedIds = table
@@ -372,37 +376,37 @@ export function ListingsTable() {
     }
   };
 
-  const handleBulkDelete = async () => {
-    const selectedIds = table
-      .getSelectedRowModel()
-      .rows.map((r) => r.original._id);
-    if (selectedIds.length === 0) return toast.error("No listings selected");
+  // const handleBulkDelete = async () => {
+  //   const selectedIds = table
+  //     .getSelectedRowModel()
+  //     .rows.map((r) => r.original._id);
+  //   if (selectedIds.length === 0) return toast.error("No listings selected");
 
-    const getLocalData = await localStorage.getItem("token");
-    const data = JSON.parse(getLocalData);
+  //   const getLocalData = await localStorage.getItem("token");
+  //   const data = JSON.parse(getLocalData);
 
-    try {
-      await Promise.all(
-        selectedIds.map((id) =>
-          fetch(`${API_URL}/properties/user-property/${id}`, {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${data}`,
-              "Content-Type": "application/json",
-            },
-          })
-        )
-      );
-      toast.success(`Deleted ${selectedIds.length} listing(s)`);
-      setDeleteDialogOpen(false);
-      setBulk(false);
-      fetchFilteredListings();
-      table.resetRowSelection();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete selected listings");
-    }
-  };
+  //   try {
+  //     await Promise.all(
+  //       selectedIds.map((id) =>
+  //         fetch(`${API_URL}/properties/user-property/${id}`, {
+  //           method: "DELETE",
+  //           headers: {
+  //             Authorization: `Bearer ${data}`,
+  //             "Content-Type": "application/json",
+  //           },
+  //         })
+  //       )
+  //     );
+  //     toast.success(`Deleted ${selectedIds.length} listing(s)`);
+  //     setDeleteDialogOpen(false);
+  //     setBulk(false);
+  //     fetchFilteredListings();
+  //     table.resetRowSelection();
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to delete selected listings");
+  //   }
+  // };
 
   const handleBulkDelist = async () => {
     const selectedIds = table
@@ -639,16 +643,16 @@ export function ListingsTable() {
                   </DropdownMenuItem>
                 )}
 
-                <DropdownMenuItem onClick={() => handleDeleteClick(listing)}>
+                {/* <DropdownMenuItem onClick={() => handleDeleteClick(listing)}>
                   Delete listing
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
               </DropdownMenuContent>
             </DropdownMenu>
           );
         },
       },
     ],
-    [handleImageClick, handleDeleteClick]
+    [handleImageClick]
   );
 
   const table = useReactTable({
@@ -677,7 +681,7 @@ export function ListingsTable() {
   return (
     <div className="w-full">
       {/* DIALOG FOR DELETING LISTING */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
@@ -701,7 +705,7 @@ export function ListingsTable() {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
 
       <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
         <DialogContent>
@@ -852,7 +856,7 @@ export function ListingsTable() {
             >
               Approve Selected
             </Button>
-            <Button
+            {/* <Button
               variant="destructive"
               onClick={() => {
                 setBulk(true);
@@ -861,7 +865,7 @@ export function ListingsTable() {
               className="text-white bg-red-600 hover:bg-red-700"
             >
               Delete Selected
-            </Button>
+            </Button> */}
             <Button
               onClick={() => {
                 setBulk(true);

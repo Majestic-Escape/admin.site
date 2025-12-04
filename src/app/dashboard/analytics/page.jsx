@@ -179,7 +179,7 @@ const AnalyticsPage = () => {
     if (data) {
       try {
         const response = await fetch(
-          `${API_URL}/booking/analytics-filter?search=${searchTerm}&status=${status}&from=${from}&to=${to}&hostEmail=${currentHost}`,
+          `${API_URL}/booking/admin/analytics-filter?search=${searchTerm}&status=${status}&from=${from}&to=${to}&hostEmail=${currentHost}`,
           {
             method: "GET",
             headers: {

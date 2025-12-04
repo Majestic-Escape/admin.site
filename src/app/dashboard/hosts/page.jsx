@@ -48,7 +48,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function HostsPage() {
   const [selectedFilters, setSelectedFilters] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -61,7 +61,7 @@ export default function HostsPage() {
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
   React.useEffect(() => {
-    fetch("https://server-me.vercel.app/api/v1/guests/")
+    fetch(`${API_URL}/guests/`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch guests data");
@@ -81,10 +81,9 @@ export default function HostsPage() {
   const handleConfirmDelete = async () => {
     if (deleteHostId) {
       try {
-        await fetch(
-          `https://server-me.vercel.app/api/v1/guests/delete/${deleteHostId}`,
-          { method: "DELETE" }
-        );
+        await fetch(`${API_URL}/guests/delete/${deleteHostId}`, {
+          method: "DELETE",
+        });
         setHosts((prev) => prev.filter((guest) => guest.id !== deleteHostId));
       } catch (err) {
         console.log(err);
@@ -102,7 +101,7 @@ export default function HostsPage() {
 
   const handleToggleBan = async (guestId, currentStatus) => {
     try {
-      await fetch(`https://server-me.vercel.app/api/v1/guests/${guestId}/ban`, {
+      await fetch(`${API_URL}/guests/${guestId}/ban`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: !currentStatus }),

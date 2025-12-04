@@ -67,18 +67,18 @@ export const propertyService = {
     }
   },
 
-  deleteProperty: async (propertyId) => {
-    try {
-      const response = await axios.delete(
-        `${API_BASE_URL}/prop-listing/${propertyId}`
-      );
-      return response.data;
-    } catch (error) {
-      throw new Error(
-        error.response?.data?.message || "Failed to delete property"
-      );
-    }
-  },
+  // deleteProperty: async (propertyId) => {
+  //   try {
+  //     const response = await axios.delete(
+  //       `${API_BASE_URL}/prop-listing/${propertyId}`
+  //     );
+  //     return response.data;
+  //   } catch (error) {
+  //     throw new Error(
+  //       error.response?.data?.message || "Failed to delete property"
+  //     );
+  //   }
+  // },
 
   createProperty: async (propertyData) => {
     try {
@@ -135,33 +135,33 @@ export const propertyService = {
       );
     }
   },
-  handleConfirmDelete: async (id) => {
-    const getLocalData = await localStorage.getItem("token");
-    const data = JSON.parse(getLocalData);
-    if (data) {
-      try {
-        const response = await fetch(
-          `${API_URL}/properties/user-property/${id}`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${data}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+  // handleConfirmDelete: async (id) => {
+  //   const getLocalData = await localStorage.getItem("token");
+  //   const data = JSON.parse(getLocalData);
+  //   if (data) {
+  //     try {
+  //       const response = await fetch(
+  //         `${API_URL}/properties/user-property/${id}`,
+  //         {
+  //           method: "DELETE",
+  //           headers: {
+  //             Authorization: `Bearer ${data}`,
+  //             "Content-Type": "application/json",
+  //           },
+  //         }
+  //       );
 
-        if (!response.ok) {
-          throw new Error("Failed to delete the listing");
-        }
+  //       if (!response.ok) {
+  //         throw new Error("Failed to delete the listing");
+  //       }
 
-        toast.success("Listing deleted successfully");
-      } catch (error) {
-        console.error("Failed to delete listing:", error);
-        toast.error("Failed to delete listing");
-      }
-    }
-  },
+  //       toast.success("Listing deleted successfully");
+  //     } catch (error) {
+  //       console.error("Failed to delete listing:", error);
+  //       toast.error("Failed to delete listing");
+  //     }
+  //   }
+  // },
   handleConfirmDelist: async (listingId) => {
     try {
       const getLocalData = await localStorage.getItem("token");

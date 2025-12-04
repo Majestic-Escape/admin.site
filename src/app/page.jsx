@@ -129,6 +129,7 @@ export default function Home() {
         body: JSON.stringify({
           email: email,
           otp: otp,
+          admin: true,
         }),
       });
 
@@ -229,10 +230,7 @@ export default function Home() {
 
         {/* Right Panel */}
         <div className="w-full lg:w-1/2 p-8 sm:p-12 flex items-center justify-center">
-          
-          
-
-          <LoginForm/>
+          <LoginForm />
         </div>
       </div>
     </>

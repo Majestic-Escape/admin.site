@@ -258,7 +258,7 @@ export default function PropertyAmenities({
     },
     {} as Record<string, typeof matchedAmenities>
   );
-  function removeHypen(str) {
+  function removeHypen(str: string) {
     const first = str
       .replace(/[-_]+/g, " ") // Replace hyphens and underscores with spaces
       .replace(/(^| )([a-z])/g, (match) => match.toUpperCase()); // Capitalize first letter after space or start

@@ -67,11 +67,11 @@ export const properties = [
   //   label: "Pool",
   //   route: "farm-house",
   // },
-  {
-    icon: "/images/property-icons/trending.svg",
-    label: "Trending",
-    route: "farm-house",
-  },
+  // {
+  //   icon: "/images/property-icons/trending.svg",
+  //   label: "Trending",
+  //   route: "farm-house",
+  // },
   // {
   //   icon: "/images/property-icons/bed-and-breakfast.svg",
   //   label: "Bed & Breakfast",
@@ -92,11 +92,11 @@ export const properties = [
     label: "Town House",
     route: "townhouse",
   },
-  {
-    icon: "/images/property-icons/historical-home.svg",
-    label: "Historical Home",
-    route: "farmhouse",
-  },
+  // {
+  //   icon: "/images/property-icons/historical-home.svg",
+  //   label: "Historical Home",
+  //   route: "farmhouse",
+  // },
   {
     icon: "/images/property-icons/treehouse.svg",
     label: "Tree House",
