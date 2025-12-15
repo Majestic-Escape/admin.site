@@ -80,7 +80,10 @@ export default function LoginForm() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.log("OTP Request Error:", errorData.code);
+
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log("OTP Request Error:", errorData.code);
+        }
         switch (errorData.code) {
           case "USER_EXISTS":
             toast.error("Account already exists, please login");
@@ -103,7 +106,7 @@ export default function LoginForm() {
       }
 
       const data = await response.json();
-      // console.log("Data:", data)
+      // process.env.ENV === 'dev' && console.log("Data:", data)
       toast.success("OTP sent successfully to your email");
       setStep(2);
     } catch (error) {

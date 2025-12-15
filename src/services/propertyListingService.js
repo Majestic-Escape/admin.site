@@ -111,7 +111,9 @@ export const propertyService = {
     try {
       const getLocalData = await localStorage.getItem("token");
       const data = JSON.parse(getLocalData);
-      console.log("tok", data, listingId);
+      if (process.env.NEXT_PUBLIC_ENV === "dev") {
+        console.log("tok", data, listingId);
+      }
       if (data) {
         const response = await fetch(
           `${API_URL}/properties/admin/approve/${listingId}`,

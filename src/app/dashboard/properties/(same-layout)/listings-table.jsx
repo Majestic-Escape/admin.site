@@ -54,7 +54,9 @@ import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-console.log("the url", API_URL);
+if (process.env.NEXT_PUBLIC_ENV === "dev") {
+  console.log("the url", API_URL);
+}
 
 const StatusPill = ({ status }) => {
   const getStatusColor = (status) => {
@@ -84,7 +86,9 @@ const StatusPill = ({ status }) => {
 };
 const StatusKyc = ({ kyc, bank }) => {
   const getStatusColor = (kyc, bank) => {
-    console.log("ssss", bank, kyc);
+    if (process.env.NEXT_PUBLIC_ENV === "dev") {
+      console.log("ssss", bank, kyc);
+    }
     if (kyc == "completed" && bank == true) {
       return "bg-green-100 text-green-800";
     } else {
@@ -602,7 +606,9 @@ export function ListingsTable() {
         enableHiding: false,
         cell: ({ row }) => {
           const listing = row.original;
-          console.log("list", listing);
+          if (process.env.NEXT_PUBLIC_ENV === "dev") {
+            console.log("list", listing);
+          }
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

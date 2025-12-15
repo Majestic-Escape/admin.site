@@ -106,7 +106,9 @@ export default function BookingsPage() {
           },
         });
         const result = await response.json();
-        console.log("sssss", result);
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log("sssss", result);
+        }
         const final = await result.data;
         setHostEmail(final);
       } catch (err) {
@@ -123,7 +125,9 @@ export default function BookingsPage() {
 
     const from = date?.from ? new Date(date.from).toLocaleDateString() : null;
     const to = date?.to ? new Date(date.to).toLocaleDateString() : null;
-    console.log("here", from);
+    if (process.env.NEXT_PUBLIC_ENV === "dev") {
+      console.log("here", from);
+    }
     if (data) {
       try {
         const response = await fetch(
@@ -144,7 +148,9 @@ export default function BookingsPage() {
           return;
         }
         const result = await response.json();
-        console.log("data ext", result);
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log("data ext", result);
+        }
         const final = await result.data;
         setHosts(final);
       } catch (err) {
@@ -184,15 +190,24 @@ export default function BookingsPage() {
         XLSX.utils.book_append_sheet(workbook, worksheet, `${worksheetname}`);
         // Save the workbook as an Excel file
         XLSX.writeFile(workbook, `${title}.xlsx`);
-        console.log(`Exported data to ${title}.xlsx`);
+
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log(`Exported data to ${title}.xlsx`);
+        }
         setLoading(false);
       } else {
         setLoading(false);
-        console.log("#==================Export Error");
+
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log("#==================Export Error");
+        }
       }
     } catch (error) {
       setLoading(false);
-      console.log("#==================Export Error", error.message);
+
+      if (process.env.NEXT_PUBLIC_ENV === "dev") {
+        console.log("#==================Export Error", error.message);
+      }
     }
   };
   const renderBookingTable = (hosts) => {

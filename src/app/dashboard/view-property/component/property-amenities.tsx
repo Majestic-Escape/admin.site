@@ -53,7 +53,9 @@ export default function PropertyAmenities({
   custom,
   safety,
 }: PropertyAmenitiesProps) {
-  console.log("values", amenities);
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("values", amenities);
+  }
 
   // Static list of all possible amenities.
   // The id values match those returned by your network response.

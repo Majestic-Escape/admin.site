@@ -119,7 +119,9 @@ export default function TransactionsPage() {
       }
     }
   };
-  console.log("s", payDetails);
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("s", payDetails);
+  }
   React.useEffect(() => {
     fetchData();
   }, [transactionType, searchTerm, filterList, date]);

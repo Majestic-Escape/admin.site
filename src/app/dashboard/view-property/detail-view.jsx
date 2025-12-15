@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button";
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const fetchProperty = async (id) => {
-  console.log("entered");
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("entered");
+  }
   if (!id) throw new Error("Property ID is missing");
   const response = await fetch(`${API_URL}/properties/${id}`);
   if (!response.ok) {
@@ -25,7 +27,9 @@ const fetchProperty = async (id) => {
     );
   }
   const result = await response.json();
-  console.log(result.data);
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log(result.data);
+  }
   return result.data;
 };
 
@@ -47,7 +51,9 @@ const fetchHostData = async (hostIdStr) => {
     throw new Error(`Failed to fetch host data (status: ${response.status})`);
   }
   const result = await response.json();
-  console.log("resp", result.data);
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("resp", result.data);
+  }
   return result.data;
 };
 
@@ -58,7 +64,9 @@ export default function DetailView() {
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   // const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [delistDialogOpen, setDelistDialogOpen] = useState(false);
-  console.log("id", propertyId);
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("id", propertyId);
+  }
 
   const {
     data: propertyData,
@@ -127,7 +135,9 @@ export default function DetailView() {
           setApproveDialogOpen(false);
         }}
         onConfirm={async () => {
-          console.log("ins", propertyId);
+          if (process.env.NEXT_PUBLIC_ENV === "dev") {
+            console.log("ins", propertyId);
+          }
           await propertyService.approveListing(propertyId);
           setApproveDialogOpen(false);
           refetchProperty();

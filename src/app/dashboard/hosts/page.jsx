@@ -86,7 +86,9 @@ export default function HostsPage() {
         });
         setHosts((prev) => prev.filter((guest) => guest.id !== deleteHostId));
       } catch (err) {
-        console.log(err);
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log(err);
+        }
         alert("Failed to delete guest.");
       }
       setShowDeleteDialog(false);
@@ -114,7 +116,9 @@ export default function HostsPage() {
         )
       );
     } catch (err) {
-      console.log(err);
+      if (process.env.NEXT_PUBLIC_ENV === "dev") {
+        console.log(err);
+      }
       alert("Failed to update guest status.");
     }
   };

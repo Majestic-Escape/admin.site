@@ -409,15 +409,24 @@ export default function BookingsPage() {
         XLSX.utils.book_append_sheet(workbook, worksheet, `${worksheetname}`);
         // Save the workbook as an Excel file
         XLSX.writeFile(workbook, `${title}.xlsx`);
-        console.log(`Exported data to ${title}.xlsx`);
+
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log(`Exported data to ${title}.xlsx`);
+        }
         setLoading(false);
       } else {
         setLoading(false);
-        console.log("#==================Export Error");
+
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log("#==================Export Error");
+        }
       }
     } catch (error) {
       setLoading(false);
-      console.log("#==================Export Error", error.message);
+
+      if (process.env.NEXT_PUBLIC_ENV === "dev") {
+        console.log("#==================Export Error", error.message);
+      }
     }
   };
   const exportCheckinDate = date.from.toLocaleString("en-US", {
@@ -432,7 +441,9 @@ export default function BookingsPage() {
     year: "numeric",
   });
   const arrayCheckoutDate = exportCheckoutDate.split("/");
-  console.log("aaa");
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("aaa");
+  }
   s;
   return (
     <div

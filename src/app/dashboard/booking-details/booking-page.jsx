@@ -34,7 +34,9 @@ export default function BookingPage() {
   useEffect(() => {
     auth();
   }, []);
-  console.log("bookingId", bookingId);
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("bookingId", bookingId);
+  }
   useEffect(() => {
     const fetchBooking = async () => {
       try {
@@ -66,7 +68,9 @@ export default function BookingPage() {
   const changeTime = (num) => {
     return `${Number(num) - 12} p.m.`;
   };
-  console.log("m", fetchedData);
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("m", fetchedData);
+  }
   if (fetchedData.length == 0)
     return (
       <div className="min-h-screen font-poppins pt-24">

@@ -120,7 +120,9 @@ export default function BookingsPage() {
   const [modifyDialogOpen, setModifyDialogOpen] = React.useState(false);
   const [bookingId, setBookingId] = React.useState(null);
   const [catchData, setCatchData] = React.useState();
-  console.log("cuy", catchData);
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("cuy", catchData);
+  }
   const submitModifyData = async () => {
     const getLocalData = await localStorage.getItem("token");
     const data = JSON.parse(getLocalData);
@@ -131,7 +133,9 @@ export default function BookingsPage() {
     const to = modalDate?.to
       ? new Date(modalDate.to).toLocaleDateString()
       : null;
-    console.log("here", from);
+    if (process.env.NEXT_PUBLIC_ENV === "dev") {
+      console.log("here", from);
+    }
     if (data) {
       try {
         const response = await fetch(
@@ -198,14 +202,18 @@ export default function BookingsPage() {
     }
   };
 
-  console.log("sup", catchData);
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("sup", catchData);
+  }
   const fetchData = async () => {
     const getLocalData = await localStorage.getItem("token");
     const data = JSON.parse(getLocalData);
 
     const from = date?.from ? new Date(date.from).toLocaleDateString() : null;
     const to = date?.to ? new Date(date.to).toLocaleDateString() : null;
-    console.log("here", from);
+    if (process.env.NEXT_PUBLIC_ENV === "dev") {
+      console.log("here", from);
+    }
     if (data) {
       try {
         const response = await fetch(
@@ -226,7 +234,9 @@ export default function BookingsPage() {
           return;
         }
         const result = await response.json();
-        console.log("data ext", result.data);
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log("data ext", result.data);
+        }
         const final = await result.data;
         setBookings(final);
       } catch (err) {
@@ -355,7 +365,9 @@ export default function BookingsPage() {
   };
 
   const handleBulkAction = (action) => {
-    console.log(`Performing ${action} on bookings:`, selectedBookings);
+    if (process.env.NEXT_PUBLIC_ENV === "dev") {
+      console.log(`Performing ${action} on bookings:`, selectedBookings);
+    }
 
     // Implement bulk action logic here
   };
@@ -377,10 +389,14 @@ export default function BookingsPage() {
   //     console.error(err);
   //   }
   // };
-  console.log("hsss", propertyType);
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("hsss", propertyType);
+  }
   const sendRejectionToUser = async () => {
     try {
-      console.log("nn", bookingId);
+      if (process.env.NEXT_PUBLIC_ENV === "dev") {
+        console.log("nn", bookingId);
+      }
       const getLocalData = await localStorage.getItem("token");
       const data = JSON.parse(getLocalData);
 
@@ -464,7 +480,9 @@ export default function BookingsPage() {
     };
 
     const handleModifyModal = (booking) => {
-      console.log("what sd is", booking?.hostId?._id);
+      if (process.env.NEXT_PUBLIC_ENV === "dev") {
+        console.log("what sd is", booking?.hostId?._id);
+      }
       fetchProperty(booking?.hostId?._id);
       setModifyDialogOpen(true);
 
@@ -632,15 +650,24 @@ export default function BookingsPage() {
         XLSX.utils.book_append_sheet(workbook, worksheet, `${worksheetname}`);
         // Save the workbook as an Excel file
         XLSX.writeFile(workbook, `${title}.xlsx`);
-        console.log(`Exported data to ${title}.xlsx`);
+
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log(`Exported data to ${title}.xlsx`);
+        }
         setLoading(false);
       } else {
         setLoading(false);
-        console.log("#==================Export Error");
+
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log("#==================Export Error");
+        }
       }
     } catch (error) {
       setLoading(false);
-      console.log("#==================Export Error", error.message);
+
+      if (process.env.NEXT_PUBLIC_ENV === "dev") {
+        console.log("#==================Export Error", error.message);
+      }
     }
   };
   const exportCheckinDate = date.from.toLocaleString("en-US", {

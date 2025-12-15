@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ImageUploader() {
   const [files, setFiles] = useState([]);
@@ -14,25 +14,27 @@ export default function ImageUploader() {
 
     const formData = new FormData();
     selectedFiles.forEach((file) => {
-      formData.append('files', file);
+      formData.append("files", file);
     });
 
     setUploading(true);
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
+      const response = await fetch("/api/upload", {
+        method: "POST",
         body: formData,
       });
 
       if (response.ok) {
         const result = await response.json();
-        console.log(result);
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log(result);
+        }
         router.refresh();
       } else {
-        console.error('Upload failed');
+        console.error("Upload failed");
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
     } finally {
       setUploading(false);
     }
@@ -40,10 +42,10 @@ export default function ImageUploader() {
 
   return (
     <div>
-      <input 
-        type="file" 
-        multiple 
-        accept="image/*" 
+      <input
+        type="file"
+        multiple
+        accept="image/*"
         onChange={handleFileUpload}
         disabled={uploading}
         max={5}

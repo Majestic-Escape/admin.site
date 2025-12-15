@@ -16,8 +16,13 @@ export default function PropertyDetails({
   propertyDetails,
   isLoading,
 }) {
-  console.log("z Host data", hostData);
-  console.log("z propertyDetails data", propertyDetails);
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("z Host data", hostData);
+  }
+
+  if (process.env.NEXT_PUBLIC_ENV === "dev") {
+    console.log("z propertyDetails data", propertyDetails);
+  }
 
   const [showAmenitiesDialog, setShowAmenitiesDialog] = useState(false);
   const [amenities, setAmenities] = useState();

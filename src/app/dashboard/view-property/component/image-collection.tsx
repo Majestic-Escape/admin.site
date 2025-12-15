@@ -17,7 +17,9 @@ export default function ImageCollection({
   height = 360,
 }: ImageGalleryProps) {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  // console.log("Photos", images);
+  // process.env.ENV === 'dev' && if (process.env.NEXT_PUBLIC_ENV === "dev") {
+  //   console.log("Photos", images);
+  // }
 
   // Limit to 5 images for display in the grid
   const displayImages = images.slice(0, 5);

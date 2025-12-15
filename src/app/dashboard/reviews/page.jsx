@@ -129,7 +129,9 @@ const ReviewsPage = () => {
       const from = date.from ? new Date(date.from).toLocaleDateString() : "";
 
       const to = date.to ? new Date(date.to).toLocaleDateString() : "";
-      console.log(from, to);
+      if (process.env.NEXT_PUBLIC_ENV === "dev") {
+        console.log(from, to);
+      }
       const getLocalData = await localStorage.getItem("token");
       const data = JSON.parse(getLocalData);
       if (data) {
@@ -148,7 +150,9 @@ const ReviewsPage = () => {
           toast.error("Error in fetching data");
         }
         const result = await response.json();
-        console.log("what now", result);
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log("what now", result);
+        }
         const final = await result;
         setReviewData(result);
 
@@ -199,7 +203,9 @@ const ReviewsPage = () => {
       const from = date.from ? new Date(date.from).toLocaleDateString() : "";
 
       const to = date.to ? new Date(date.to).toLocaleDateString() : "";
-      console.log(from, to);
+      if (process.env.NEXT_PUBLIC_ENV === "dev") {
+        console.log(from, to);
+      }
       const getLocalData = await localStorage.getItem("token");
       const data = JSON.parse(getLocalData);
       // const review = reviewData

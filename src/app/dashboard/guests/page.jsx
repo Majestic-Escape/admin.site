@@ -84,7 +84,9 @@ export default function GuestsPage() {
           return response.json();
         })
         .then((result) => {
-          console.log("what", result);
+          if (process.env.NEXT_PUBLIC_ENV === "dev") {
+            console.log("what", result);
+          }
           setGuests(result.data);
           setCount(result.total);
           setLoading(false);
@@ -124,7 +126,9 @@ export default function GuestsPage() {
           );
           toast.success("Successfully deleted the guest");
         } catch (err) {
-          console.log(err);
+          if (process.env.NEXT_PUBLIC_ENV === "dev") {
+            console.log(err);
+          }
           alert("Failed to delete guest.");
         }
         setShowDeleteDialog(false);
@@ -166,7 +170,9 @@ export default function GuestsPage() {
           )
         );
       } catch (err) {
-        console.log(err);
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log(err);
+        }
         alert("Failed to update guest status.");
       }
     }

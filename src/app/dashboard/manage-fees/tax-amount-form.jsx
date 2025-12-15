@@ -46,12 +46,16 @@ export function TaxAmountForm() {
   }, []);
   const handleSubmit = async (e) => {
     e.preventDefault(); // prevent full page reload
-    console.log(gst, service);
+    if (process.env.NEXT_PUBLIC_ENV === "dev") {
+      console.log(gst, service);
+    }
     const payload = {
       gst: gst,
       service: service,
     };
-    console.log("stage1", payload);
+    if (process.env.NEXT_PUBLIC_ENV === "dev") {
+      console.log("stage1", payload);
+    }
     setIsSubmitting(true);
     try {
       const tokenData = await localStorage.getItem("token");
@@ -73,7 +77,9 @@ export function TaxAmountForm() {
         body: JSON.stringify(payload),
       });
 
-      console.log("stage3");
+      if (process.env.NEXT_PUBLIC_ENV === "dev") {
+        console.log("stage3");
+      }
       if (!response.ok) {
         // Handle HTTP errors (4xx, 5xx)
         const errorText = await response.text();
@@ -95,7 +101,10 @@ export function TaxAmountForm() {
 
       // Parse successful response
       const responseData = await response.json();
-      console.log("🔍 Stage 4 - Success response:", responseData);
+
+      if (process.env.NEXT_PUBLIC_ENV === "dev") {
+        console.log("🔍 Stage 4 - Success response:", responseData);
+      }
 
       if (responseData.success) {
         toast.success("✅ Bank info saved successfully");

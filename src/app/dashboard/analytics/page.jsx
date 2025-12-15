@@ -175,7 +175,9 @@ const AnalyticsPage = () => {
 
     const from = getDate(dateRange.from);
     const to = getDate(dateRange.to);
-    console.log(from, to);
+    if (process.env.NEXT_PUBLIC_ENV === "dev") {
+      console.log(from, to);
+    }
     if (data) {
       try {
         const response = await fetch(
@@ -209,7 +211,9 @@ const AnalyticsPage = () => {
           },
         });
         const result = await response.json();
-        console.log("sssss", result);
+        if (process.env.NEXT_PUBLIC_ENV === "dev") {
+          console.log("sssss", result);
+        }
         const final = await result.data;
         setHostEmail(final);
       } catch (err) {
