@@ -49,6 +49,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function GuestsPage() {
@@ -63,6 +64,7 @@ export default function GuestsPage() {
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [skip, setSkip] = React.useState(0);
   const [count, setCount] = React.useState(0);
+  const router = useRouter();
   const getData = async () => {
     const getLocalData = await localStorage.getItem("token");
     const data = JSON.parse(getLocalData);
@@ -424,6 +426,7 @@ export default function GuestsPage() {
                         <TableHead>Last Booking</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
+                        <TableHead>Kyc Steps</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -468,6 +471,26 @@ export default function GuestsPage() {
                               }
                             >
                               {guest.status.active ? "Ban" : "Unban"}
+                            </Button>
+                          </TableCell>
+                          <TableCell>
+                            {/* <Button
+                              onClick={() => handleDeleteClick(guest._id)}
+                              variant="danger"
+                            >
+                              Delete
+                            </Button> */}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="ml-2 bg-white text-red-500 border border-red-500"
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/kyc-details/${guest._id}?firstName=${guest.firstName}&lastName=${guest.lastName}`
+                                )
+                              }
+                            >
+                              Details
                             </Button>
                           </TableCell>
                         </TableRow>

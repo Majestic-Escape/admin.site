@@ -8,19 +8,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export function GuestTableSkeleton() {
+export function KycDetailsSkeleton() {
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead className="w-[100px]">Guest</TableHead>
           <TableHead>Email</TableHead>
-          <TableHead>Phone</TableHead>
-          <TableHead>Total Spent</TableHead>
-          <TableHead>Rating</TableHead>
-          <TableHead>Last Booking</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Actions</TableHead>
+          <TableHead>Form</TableHead>
+          <TableHead>Document Upload</TableHead>
+          <TableHead>Gst Validation</TableHead>
+          <TableHead>Terms and Condition</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -40,12 +38,6 @@ export function GuestTableSkeleton() {
             </TableCell>
             <TableCell>
               <Skeleton className="h-4 w-[40px]" />
-            </TableCell>
-            <TableCell>
-              <Skeleton className="h-4 w-[100px]" />
-            </TableCell>
-            <TableCell>
-              <Skeleton className="h-4 w-[60px]" />
             </TableCell>
             <TableCell>
               <Skeleton className="h-4 w-[100px]" />

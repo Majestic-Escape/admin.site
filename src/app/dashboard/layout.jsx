@@ -40,7 +40,13 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     auth();
   }, []);
-
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-20 w-20 animate-spin rounded-full border-b-2 border-current"></div>
+      </div>
+    );
+  }
   if (!isAuth) {
     return (
       <>
@@ -56,13 +62,7 @@ export default function DashboardLayout({ children }) {
       </>
     );
   }
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="h-20 w-20 animate-spin rounded-full border-b-2 border-current"></div>
-      </div>
-    );
-  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen overflow-hidden w-screen">

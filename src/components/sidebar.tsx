@@ -29,7 +29,14 @@ import {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const isActive = (href: string) => {
+    if (href === "/dashboard") {
+      return pathname === href;
+    }
+    return pathname.startsWith(href);
+  };
 
+  const activeClass = "bg-primary/10 text-primary font-medium";
   return (
     <SidebarComponent className="border-r">
       <SidebarHeader>
@@ -52,7 +59,9 @@ export function Sidebar() {
             <Button variant="ghost" className="w-full justify-start" asChild>
               <Link
                 href="/dashboard"
-                className={pathname === "/dashboard" ? "text-primary" : ""}
+                className={`flex items-center w-full ${
+                  isActive("/dashboard") ? activeClass : "text-muted-foreground"
+                }`}
               >
                 <Home className="mr-2 h-4 w-4" />
                 Dashboard
@@ -64,9 +73,11 @@ export function Sidebar() {
             <Button variant="ghost" className="w-full justify-start" asChild>
               <Link
                 href="/dashboard/guests"
-                className={
-                  pathname === "/dashboard/guests" ? "text-primary" : ""
-                }
+                className={`flex items-center w-full ${
+                  isActive("/dashboard/guests")
+                    ? activeClass
+                    : "text-muted-foreground"
+                }`}
               >
                 <Users className="mr-2 h-4 w-4" />
                 Guests
@@ -77,9 +88,11 @@ export function Sidebar() {
             <Button variant="ghost" className="w-full justify-start" asChild>
               <Link
                 href="/dashboard/properties"
-                className={
-                  pathname === "/dashboard/properties" ? "text-primary" : ""
-                }
+                className={`flex items-center w-full ${
+                  isActive("/dashboard/properties")
+                    ? activeClass
+                    : "text-muted-foreground"
+                }`}
               >
                 <Building className="mr-2 h-4 w-4" />
                 Properties
@@ -90,9 +103,11 @@ export function Sidebar() {
             <Button variant="ghost" className="w-full justify-start" asChild>
               <Link
                 href="/dashboard/bookings"
-                className={
-                  pathname === "/dashboard/bookings" ? "text-primary" : ""
-                }
+                className={`flex items-center w-full ${
+                  isActive("/dashboard/booking")
+                    ? activeClass
+                    : "text-muted-foreground"
+                }`}
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 Bookings
@@ -103,9 +118,11 @@ export function Sidebar() {
             <Button variant="ghost" className="w-full justify-start" asChild>
               <Link
                 href="/dashboard/host-history"
-                className={
-                  pathname === "/dashboard/host-history" ? "text-primary" : ""
-                }
+                className={`flex items-center w-full ${
+                  isActive("/dashboard/host-history")
+                    ? activeClass
+                    : "text-muted-foreground"
+                }`}
               >
                 <UserCheck className="mr-2 h-4 w-4" />
                 Hosts
@@ -124,11 +141,11 @@ export function Sidebar() {
             <Button variant="ghost" className="w-full justify-start" asChild>
               <Link
                 href="/dashboard/booking-history"
-                className={
-                  pathname === "/dashboard/booking-history"
-                    ? "text-primary"
-                    : ""
-                }
+                className={`flex items-center w-full ${
+                  isActive("/dashboard/booking-history")
+                    ? activeClass
+                    : "text-muted-foreground"
+                }`}
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 History
@@ -139,9 +156,11 @@ export function Sidebar() {
             <Button variant="ghost" className="w-full justify-start" asChild>
               <Link
                 href="/dashboard/transactions"
-                className={
-                  pathname === "/dashboard/financials" ? "text-primary" : ""
-                }
+                className={`flex items-center w-full ${
+                  isActive("/dashboard/transactions")
+                    ? activeClass
+                    : "text-muted-foreground"
+                }`}
               >
                 <DollarSign className="mr-2 h-4 w-4" />
                 Transactions
@@ -153,9 +172,11 @@ export function Sidebar() {
             <Button variant="ghost" className="w-full justify-start" asChild>
               <Link
                 href="/dashboard/analytics"
-                className={
-                  pathname === "/dashboard/analytics" ? "text-primary" : ""
-                }
+                className={`flex items-center w-full ${
+                  isActive("/dashboard/analytics")
+                    ? activeClass
+                    : "text-muted-foreground"
+                }`}
               >
                 <BarChart2 className="mr-2 h-4 w-4" />
                 Analytics
@@ -167,9 +188,11 @@ export function Sidebar() {
             <Button variant="ghost" className="w-full justify-start" asChild>
               <Link
                 href="/dashboard/reviews"
-                className={
-                  pathname === "/dashboard/reviews" ? "text-primary" : ""
-                }
+                className={`flex items-center w-full ${
+                  isActive("/dashboard/reviews")
+                    ? activeClass
+                    : "text-muted-foreground"
+                }`}
               >
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Reviews
