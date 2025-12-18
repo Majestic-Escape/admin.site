@@ -138,28 +138,60 @@ export default function KycDetailsPage() {
                         </TableCell>
                         <TableCell>{guests[0]?.hostEmail}</TableCell>
                         <TableCell>
-                          {" "}
-                          {guests[0]?.personalInfo?.address?.pincode != "" &&
-                          guests[0]?.status == "completed"
-                            ? "Completed"
-                            : "Pending"}
+                          <span
+                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              guests[0]?.personalInfo?.address?.pincode != "" &&
+                              guests[0]?.status == "completed"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {guests[0]?.personalInfo?.address?.pincode != "" &&
+                            guests[0]?.status == "completed"
+                              ? "Completed"
+                              : "Pending"}
+                          </span>
                         </TableCell>
                         <TableCell>
-                          {guests[0]?.documentInfo?.isVerified
-                            ? "Completed"
-                            : "Pending"}
+                          <span
+                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              guests[0]?.documentInfo?.isVerified
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {guests[0]?.documentInfo?.isVerified
+                              ? "Completed"
+                              : "Pending"}
+                          </span>
                         </TableCell>
                         <TableCell>
                           {" "}
-                          {guests[0]?.gstInfo?.isVerified
-                            ? "Completed"
-                            : "Pending"}
+                          <span
+                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              guests[0]?.gstInfo?.isVerified
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {guests[0]?.gstInfo?.isVerified
+                              ? "Completed"
+                              : "Pending"}
+                          </span>
                         </TableCell>
                         <TableCell>
                           {" "}
-                          {guests[0]?.acceptedTerms?.general
-                            ? "Completed"
-                            : "Pending"}
+                          <span
+                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              guests[0]?.acceptedTerms?.general
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {guests[0]?.acceptedTerms?.general
+                              ? "Completed"
+                              : "Pending"}
+                          </span>
                         </TableCell>
                       </TableRow>
                     ))}

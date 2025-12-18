@@ -104,7 +104,7 @@ export function Sidebar() {
               <Link
                 href="/dashboard/bookings"
                 className={`flex items-center w-full ${
-                  isActive("/dashboard/booking")
+                  isActive("/dashboard/bookings")
                     ? activeClass
                     : "text-muted-foreground"
                 }`}

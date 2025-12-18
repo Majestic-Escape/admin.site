@@ -1,7 +1,8 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect } from "react";
-
+import { useCheckToken } from "@/services/useCheckToken";
 type Admin = {
   email: string;
 
@@ -38,7 +39,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setAdmin(null);
     localStorage.removeItem("admin");
   };
+  const { checkToken } = useCheckToken();
+  const pathname = usePathname();
 
+  // useEffect(() => {
+  //   const verify = async () => {
+  //     await checkToken();
+  //   };
+  //   verify();
+  // }, [pathname]);
   return (
     <AuthContext.Provider value={{ admin, login, logout }}>
       {children}

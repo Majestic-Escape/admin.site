@@ -426,7 +426,6 @@ export default function GuestsPage() {
                         <TableHead>Last Booking</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
-                        <TableHead>Kyc Steps</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -455,13 +454,25 @@ export default function GuestsPage() {
                               {guest.status.active ? "Active" : "Inactive"}
                             </span>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="flex">
                             {/* <Button
                               onClick={() => handleDeleteClick(guest._id)}
                               variant="danger"
                             >
                               Delete
                             </Button> */}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="mr-2 bg-white text-yellow-500 border border-yellow-500"
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/kyc-details/${guest._id}?firstName=${guest.firstName}&lastName=${guest.lastName}`
+                                )
+                              }
+                            >
+                              KYC
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
@@ -473,26 +484,14 @@ export default function GuestsPage() {
                               {guest.status.active ? "Ban" : "Unban"}
                             </Button>
                           </TableCell>
-                          <TableCell>
-                            {/* <Button
+                          {/* <TableCell>
+                            <Button
                               onClick={() => handleDeleteClick(guest._id)}
                               variant="danger"
                             >
                               Delete
-                            </Button> */}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="ml-2 bg-white text-red-500 border border-red-500"
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/kyc-details/${guest._id}?firstName=${guest.firstName}&lastName=${guest.lastName}`
-                                )
-                              }
-                            >
-                              Details
                             </Button>
-                          </TableCell>
+                          </TableCell> */}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -513,9 +512,10 @@ export default function GuestsPage() {
                         className="bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
                         onClick={() => {
                           // setCurrentPage((prev) => Math.max(prev - 1, 1))
-                          if (skip >= 2) {
-                            setSkip((prev) => prev - 1);
-                          }
+                          // if (skip >= 2) {
+                          //   setSkip((prev) => prev - 1);
+                          // }
+                          setSkip((prev) => Math.max(prev - 1, 0));
                         }}
                         disabled={skip == 0 ? true : false}
                       >

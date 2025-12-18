@@ -120,6 +120,11 @@ export default function BookingsPage() {
   const [modifyDialogOpen, setModifyDialogOpen] = React.useState(false);
   const [bookingId, setBookingId] = React.useState(null);
   const [catchData, setCatchData] = React.useState();
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [skip, setSkip] = React.useState(0);
+  const [count, setCount] = React.useState(0);
+  const [mssg, setMssg] = React.useState(false);
   if (process.env.NEXT_PUBLIC_ENV === "dev") {
     console.log("cuy", catchData);
   }
@@ -209,15 +214,20 @@ export default function BookingsPage() {
     const getLocalData = await localStorage.getItem("token");
     const data = JSON.parse(getLocalData);
 
-    const from = date?.from ? new Date(date.from).toLocaleDateString() : null;
-    const to = date?.to ? new Date(date.to).toLocaleDateString() : null;
+    // const from = date?.from ? new Date(date.from).toLocaleDateString() : null;
+    // const to = date?.to ? new Date(date.to).toLocaleDateString() : null;
+
+    const from = date?.from ? date.from.toLocaleDateString() : null;
+    const to = date?.to ? date.to.toLocaleDateString() : null;
+    console.log("here", from, to);
     if (process.env.NEXT_PUBLIC_ENV === "dev") {
       console.log("here", from);
     }
+    setMssg(false);
     if (data) {
       try {
         const response = await fetch(
-          `${API_URL}/booking/admin/analytics-filter?search=${searchTerm}&status=${activeTab}&from=${from}&to=${to}`,
+          `${API_URL}/booking/admin/analytics-filter?search=${searchTerm}&status=${activeTab}&from=${from}&to=${to}&limit=${rowsPerPage}&skip=${rowsPerPage * skip}`,
           {
             method: "GET",
             headers: {
@@ -226,58 +236,60 @@ export default function BookingsPage() {
             },
           }
         );
-        if (response.status === 401) {
-          // Token expired or missing
-          localStorage.removeItem("token");
-          localStorage.removeItem("userId");
-          router.push("/"); // redirect to login
-          return;
-        }
         const result = await response.json();
         if (process.env.NEXT_PUBLIC_ENV === "dev") {
-          console.log("data ext", result.data);
+          console.log("aaaaaaa", result);
+        }
+        const mssg = await result.error;
+        if (mssg == "toDate") {
+          toast.error("Cannot select same date twice");
+          setMssg(true);
+        }
+        if (response.status != 200) {
+          return;
         }
         const final = await result.data;
         setBookings(final);
+        setCount(result.total);
       } catch (err) {
         console.error(err);
       }
     }
   };
 
-  const fetchProperty = async (hostId) => {
-    const getLocalData = await localStorage.getItem("token");
-    const data = JSON.parse(getLocalData);
+  // const fetchProperty = async (hostId) => {
+  //   const getLocalData = await localStorage.getItem("token");
+  //   const data = JSON.parse(getLocalData);
 
-    if (data) {
-      try {
-        const response = await fetch(
-          `${API_URL}/properties/id-and-name/${hostId}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${data}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (response.status === 401) {
-          // Token expired or missing
-          localStorage.removeItem("token");
-          localStorage.removeItem("userId");
-          router.push("/"); // redirect to login
-          return;
-        }
-        const result = await response.json();
-        setPropertyList(result.data);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-  };
+  //   if (data) {
+  //     try {
+  //       const response = await fetch(
+  //         `${API_URL}/properties/id-and-name/${hostId}`,
+  //         {
+  //           method: "GET",
+  //           headers: {
+  //             Authorization: `Bearer ${data}`,
+  //             "Content-Type": "application/json",
+  //           },
+  //         }
+  //       );
+  //       if (response.status === 401) {
+  //         // Token expired or missing
+  //         localStorage.removeItem("token");
+  //         localStorage.removeItem("userId");
+  //         router.push("/"); // redirect to login
+  //         return;
+  //       }
+  //       const result = await response.json();
+  //       setPropertyList(result.data);
+  //     } catch (error) {
+  //       console.error(error);
+  //     }
+  //   }
+  // };
   React.useEffect(() => {
     fetchData();
-  }, [searchTerm, activeTab, date]);
+  }, [searchTerm, activeTab, date, rowsPerPage, skip]);
 
   // React.useEffect(() => {
   //   fetchProperty();
@@ -437,18 +449,20 @@ export default function BookingsPage() {
       );
     }
 
-    if (!loading && !bookings) {
-      return (
-        <div className="py-10 text-center">
-          <h3 className="text-lg font-medium text-gray-900">
-            No bookings found.
-          </h3>
-          <p className="mt-2 text-sm text-gray-500">
-            Looks like you haven't received any bookings yet.
-          </p>
-        </div>
-      );
-    }
+    // if (!loading && bookings?.length == 0 && date.from && date.to) {
+    //   if (date.from.toLocaleDateString() != date.to.toLocaleDateString()) {
+    //     return (
+    //       <div className="py-10 text-center">
+    //         <h3 className="text-lg font-medium text-gray-900">
+    //           No bookings found.
+    //         </h3>
+    //         <p className="mt-2 text-sm text-gray-500">
+    //           Looks like you haven't received any bookings yet.
+    //         </p>
+    //       </div>
+    //     );
+    //   }
+    // }
     const StatusPill = ({ status }) => {
       const getStatusColor = (status) => {
         switch (status) {
@@ -501,11 +515,12 @@ export default function BookingsPage() {
       return value;
     }
     return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px]">
-              {/* <Checkbox
+      <>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50px]">
+                {/* <Checkbox
                 checked={selectedBookings?.length === bookings?.length}
                 onCheckedChange={(checked) => {
                   if (checked) {
@@ -515,74 +530,74 @@ export default function BookingsPage() {
                   }
                 }}
               /> */}
-            </TableHead>
-            <TableHead className="w-[180px]">Guest</TableHead>
-            <TableHead className="w-[180px]">Property</TableHead>
-            <TableHead>Check-in</TableHead>
-            <TableHead>Check-out</TableHead>
-            <TableHead>
-              <Button variant="ghost" className="p-0 hover:bg-transparent">
-                <span>Total</span>
-                <SortAsc className="ml-2 h-4 w-4" />
-              </Button>
-            </TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {bookings.map((booking) => (
-            <TableRow key={booking._id}>
-              <TableCell>
-                <Checkbox
-                  checked={selectedBookings.includes(booking._id)}
-                  onCheckedChange={() => toggleBookingSelection(booking._id)}
-                />
-              </TableCell>
-              <TableCell className="font-medium">
-                <span
-                  title={
-                    booking.userId.firstName + " " + booking?.userId?.lastName
-                  }
-                >
-                  {checkLength(
-                    booking.userId.firstName + " " + booking?.userId?.lastName
-                  )}
-                </span>
-              </TableCell>
-              <TableCell>
-                <span title={booking?.propertyId.title}>
-                  {checkLength(booking?.propertyId.title)}
-                </span>
-              </TableCell>
-              <TableCell>
-                {new Date(booking?.checkIn).toDateString().slice(3)}
-              </TableCell>
-              <TableCell>
-                {new Date(booking?.checkOut).toDateString().slice(3)}
-              </TableCell>
-              <TableCell>{booking?.price}</TableCell>
-              <TableCell>
-                <StatusPill status={booking?.status} />
-              </TableCell>
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() =>
-                        router.push(
-                          `/dashboard/booking-details?booking=${booking._id}`
-                        )
-                      }
-                    >
-                      View details
-                    </DropdownMenuItem>
-                    {/* <DropdownMenuItem>Modify booking</DropdownMenuItem>
+              </TableHead>
+              <TableHead className="w-[180px]">Guest</TableHead>
+              <TableHead className="w-[180px]">Property</TableHead>
+              <TableHead>Check-in</TableHead>
+              <TableHead>Check-out</TableHead>
+              <TableHead>
+                <Button variant="ghost" className="p-0 hover:bg-transparent">
+                  <span>Total</span>
+                  <SortAsc className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {bookings?.map((booking) => (
+              <TableRow key={booking._id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedBookings.includes(booking._id)}
+                    onCheckedChange={() => toggleBookingSelection(booking._id)}
+                  />
+                </TableCell>
+                <TableCell className="font-medium">
+                  <span
+                    title={
+                      booking.userId.firstName + " " + booking?.userId?.lastName
+                    }
+                  >
+                    {checkLength(
+                      booking.userId.firstName + " " + booking?.userId?.lastName
+                    )}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span title={booking?.propertyId.title}>
+                    {checkLength(booking?.propertyId.title)}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {new Date(booking?.checkIn).toDateString().slice(3)}
+                </TableCell>
+                <TableCell>
+                  {new Date(booking?.checkOut).toDateString().slice(3)}
+                </TableCell>
+                <TableCell>{booking?.price}</TableCell>
+                <TableCell>
+                  <StatusPill status={booking?.status} />
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() =>
+                          router.push(
+                            `/dashboard/booking-details?booking=${booking._id}`
+                          )
+                        }
+                      >
+                        View details
+                      </DropdownMenuItem>
+                      {/* <DropdownMenuItem>Modify booking</DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
                         sendConfirmationToUser(booking.id, userEmail);
@@ -590,34 +605,95 @@ export default function BookingsPage() {
                     >
                       Send message
                     </DropdownMenuItem> */}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className=""
-                      onClick={() => {
-                        handleModifyModal(booking);
-                      }}
-                    >
-                      Modify
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {booking.status != "rejected" &&
-                    booking.status != "cancelled" ? (
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        className="text-red-600"
+                        className=""
                         onClick={() => {
-                          handleModal(booking);
+                          handleModifyModal(booking);
                         }}
                       >
-                        Cancel booking
+                        Modify
                       </DropdownMenuItem>
-                    ) : null}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                      <DropdownMenuSeparator />
+                      {booking.status != "rejected" &&
+                      booking.status != "cancelled" ? (
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => {
+                            handleModal(booking);
+                          }}
+                        >
+                          Cancel booking
+                        </DropdownMenuItem>
+                      ) : null}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {bookings && bookings?.length === 0 && (
+          <div className="text-center py-10 text-gray-500 font-medium">
+            {date?.from && !date?.to && (
+              <>Cannot select single date. Reselect the date range.</>
+            )}
+
+            {date?.from && date?.to && (
+              <>No bookings found for the selected date range.</>
+            )}
+          </div>
+        )}
+        <div className="text-center py-10 text-gray-500 font-medium">
+          {mssg ? <>Cannot select same date. Reselect the date range.</> : null}
+        </div>
+        <div className="mt-4 flex items-center justify-between">
+          <small>
+            Showing {skip == 0 ? 0 : skip * rowsPerPage} to{" "}
+            {skip == 0
+              ? rowsPerPage
+              : skip * rowsPerPage + rowsPerPage >= count &&
+                  skip * rowsPerPage - rowsPerPage <= count
+                ? count
+                : skip * rowsPerPage + rowsPerPage}{" "}
+            of {count} entries
+          </small>
+          <div className="flex gap-2">
+            <Button
+              className="bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
+              onClick={() => {
+                // setCurrentPage((prev) => Math.max(prev - 1, 1))
+                // if (skip >= 2) {
+                //   setSkip((prev) => prev - 1);
+                // }
+                setSkip((prev) => Math.max(prev - 1, 0));
+              }}
+              disabled={skip == 0 ? true : false}
+            >
+              Previous
+            </Button>
+            <Button
+              className="bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
+              onClick={() =>
+                // setCurrentPage((prev) =>
+                //   Math.min(prev + 1, totalPages)
+                // )
+                {
+                  setSkip((prev) => prev + 1);
+                }
+              }
+              disabled={
+                count >= skip * rowsPerPage - rowsPerPage &&
+                count <= skip * rowsPerPage + rowsPerPage
+                  ? true
+                  : false
+              }
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      </>
     );
   };
   const sendData = async () => {
@@ -630,7 +706,7 @@ export default function BookingsPage() {
 
       // Check if the action result contains data and if it's an array
       if (bookings && Array.isArray(bookings)) {
-        const dataToExport = bookings.map((pro) => ({
+        const dataToExport = bookings?.map((pro) => ({
           booking_id: pro?._id,
           user_name: pro?.hostId?.firstName + " " + pro?.hostId?.lastName,
           user_id: pro?.hostId?._id,
@@ -670,18 +746,22 @@ export default function BookingsPage() {
       }
     }
   };
-  const exportCheckinDate = date.from.toLocaleString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-  });
-  const arrayCheckinDate = exportCheckinDate.split("/");
-  const exportCheckoutDate = date.to.toLocaleString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-  });
-  const arrayCheckoutDate = exportCheckoutDate.split("/");
+  const exportCheckinDate =
+    date?.from &&
+    date.from.toLocaleString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
+  const arrayCheckinDate = date?.from && exportCheckinDate.split("/");
+  const exportCheckoutDate =
+    date?.to &&
+    date.to.toLocaleString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
+  const arrayCheckoutDate = date?.to && exportCheckoutDate.split("/");
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6 bg-gray-200 min-h-screen">
@@ -893,19 +973,41 @@ export default function BookingsPage() {
                 mode="range"
                 defaultMonth={date?.from}
                 selected={date}
-                onSelect={setDate}
-                numberOfMonths={1}
+                // onSelect={setDate}
+                onSelect={(range) => {
+                  // if (
+                  //   range.to.toLocaleDateString() ==
+                  //   range.from.toLocaleDateString()
+                  // )
+                  //   toast.error("Select two dates for date range");
+                  if (!range?.from) {
+                    // 👇 fallback when user deselects
+                    toast.error("Cannot select date twice");
+                    return;
+                  }
+                  if (!range?.to) {
+                    toast.error("Select two dates for date range");
+                  }
+
+                  // Normal value
+                  setDate(range);
+                }}
+                numberOfMonths={2}
               />
             </PopoverContent>
           </Popover>
           <Button
             className="bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
-            onClick={() =>
-              onGetExporProduct(
-                `All_Booking_${arrayCheckinDate[0]}${arrayCheckinDate[1]}${arrayCheckinDate[2]}_${arrayCheckoutDate[0]}${arrayCheckoutDate[1]}${arrayCheckoutDate[2]}`,
-                "All_BookingExport"
-              )
-            }
+            onClick={() => {
+              if (!date?.from || !date?.to) {
+                toast.error("Select both dates on calendar before export");
+              } else {
+                onGetExporProduct(
+                  `All_Booking_${arrayCheckinDate[0]}${arrayCheckinDate[1]}${arrayCheckinDate[2]}_${arrayCheckoutDate[0]}${arrayCheckoutDate[1]}${arrayCheckoutDate[2]}`,
+                  "All_BookingExport"
+                );
+              }
+            }}
           >
             <Download className="mr-2 h-4 w-4" />
             Export CSV

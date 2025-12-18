@@ -86,6 +86,7 @@ export default function BookingsPage() {
   const [bookingId, setBookingId] = React.useState(null);
   const [selectHost, setSelectHost] = React.useState("all");
   const [hostEmail, setHostEmail] = React.useState([]);
+  const [mssg, setMssg] = React.useState(false);
   // Simulate a 2 second loading delay to show the skeleton UI.
   const getDate = (item) => {
     const d = new Date(item);
@@ -116,18 +117,19 @@ export default function BookingsPage() {
       }
     }
   };
-  React.useEffect(() => {
-    fetchHostEmails();
-  }, []);
+
   const fetchData = async () => {
     const getLocalData = await localStorage.getItem("token");
     const data = JSON.parse(getLocalData);
-
-    const from = date?.from ? new Date(date.from).toLocaleDateString() : null;
-    const to = date?.to ? new Date(date.to).toLocaleDateString() : null;
+    console.log("print", data);
+    // const from = date?.from ? new Date(date.from).toLocaleDateString() : null;
+    // const to = date?.to ? new Date(date.to).toLocaleDateString() : null;
+    const from = date.from ? date.from.toLocaleDateString() : null;
+    const to = date.to ? date.to.toLocaleDateString() : null;
     if (process.env.NEXT_PUBLIC_ENV === "dev") {
       console.log("here", from);
     }
+    setMssg(false);
     if (data) {
       try {
         const response = await fetch(
@@ -140,14 +142,16 @@ export default function BookingsPage() {
             },
           }
         );
-        if (response.status === 401) {
-          // Token expired or missing
-          localStorage.removeItem("token");
-          localStorage.removeItem("userId");
-          router.push("/"); // redirect to login
+
+        const result = await response.json();
+        const mssg = await result.error;
+        if (mssg == "toDate") {
+          toast.error("Cannot select same date twice");
+          setMssg(true);
+        }
+        if (response.status != 200) {
           return;
         }
-        const result = await response.json();
         if (process.env.NEXT_PUBLIC_ENV === "dev") {
           console.log("data ext", result);
         }
@@ -161,7 +165,9 @@ export default function BookingsPage() {
   React.useEffect(() => {
     fetchData();
   }, [searchTerm, selectHost, date]);
-
+  React.useEffect(() => {
+    fetchHostEmails();
+  }, []);
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -225,18 +231,20 @@ export default function BookingsPage() {
       );
     }
 
-    if (!loading && !bookings) {
-      return (
-        <div className="py-10 text-center">
-          <h3 className="text-lg font-medium text-gray-900">
-            No bookings found.
-          </h3>
-          <p className="mt-2 text-sm text-gray-500">
-            Looks like you haven't received any bookings yet.
-          </p>
-        </div>
-      );
-    }
+    // if (!loading && bookings?.length == 0 && date.from && date.to) {
+    //   if (date.from.toLocaleDateString() != date.to.toLocaleDateString()) {
+    //     return (
+    //       <div className="py-10 text-center">
+    //         <h3 className="text-lg font-medium text-gray-900">
+    //           No bookings found.
+    //         </h3>
+    //         <p className="mt-2 text-sm text-gray-500">
+    //           Looks like you haven't received any bookings yet.
+    //         </p>
+    //       </div>
+    //     );
+    //   }
+    // }
     const StatusPill = ({ status }) => {
       const getStatusColor = (status) => {
         switch (status) {
@@ -274,61 +282,66 @@ export default function BookingsPage() {
       return value;
     }
     return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[180px]">Guest</TableHead>
-            <TableHead className="w-[180px]">Kyc Status</TableHead>
-            <TableHead className="w-[180px]">Total Amount</TableHead>
-            <TableHead>Total Bookings</TableHead>
-            <TableHead>Total Reviews</TableHead>
-            <TableHead>
-              <Button variant="ghost" className="p-0 hover:bg-transparent">
-                <span>Rating</span>
-                {/* <SortAsc className="ml-2 h-4 w-4" /> */}
-              </Button>
-            </TableHead>
-            {/* <TableHead>Status</TableHead>
+      <>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[180px]">Guest</TableHead>
+              <TableHead className="w-[180px]">Kyc Status</TableHead>
+              <TableHead className="w-[180px]">Total Amount</TableHead>
+              <TableHead>Total Bookings</TableHead>
+              <TableHead>Total Reviews</TableHead>
+              <TableHead>
+                <Button variant="ghost" className="p-0 hover:bg-transparent">
+                  <span>Rating</span>
+                  {/* <SortAsc className="ml-2 h-4 w-4" /> */}
+                </Button>
+              </TableHead>
+              {/* <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead> */}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {bookings.map((booking) => (
-            <TableRow key={booking._id}>
-              <TableCell className="font-medium">
-                <span
-                  title={
-                    booking.userId?.firstName + " " + booking?.userId?.lastName
-                  }
-                  onClick={() =>
-                    router.push(
-                      `/dashboard/booking-history/user-profile?userId=${booking.userId._id}`
-                    )
-                  }
-                  className="underline cursor-pointer"
-                >
-                  {checkLength(
-                    booking.userId?.firstName + " " + booking?.userId?.lastName
-                  )}
-                </span>
-              </TableCell>
-              <TableCell>
-                {booking?.userId?.kyc?.isVerified ? "Verified" : "Pending"}
-              </TableCell>
-              <TableCell>
-                <span title={booking?.totalAmountSpent}>
-                  ₹ {booking?.totalAmountSpent}
-                </span>
-              </TableCell>
-              <TableCell>{booking?.totalBookings}</TableCell>
-              <TableCell>{booking?.totalReviews}</TableCell>
-              <TableCell className="flex">
-                {" "}
-                <Star className="h-4 w-4 text-yellow-400 ml-1" />{" "}
-                <span className="pl-2">{booking?.userId?.averageRating}</span>
-              </TableCell>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {bookings?.map((booking) => (
+              <TableRow key={booking._id}>
+                <TableCell className="font-medium">
+                  <span
+                    title={
+                      booking.userId?.firstName +
+                      " " +
+                      booking?.userId?.lastName
+                    }
+                    onClick={() =>
+                      router.push(
+                        `/dashboard/booking-history/user-profile?userId=${booking.userId._id}`
+                      )
+                    }
+                    className="underline cursor-pointer"
+                  >
+                    {checkLength(
+                      booking.userId?.firstName +
+                        " " +
+                        booking?.userId?.lastName
+                    )}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {booking?.userId?.kyc?.isVerified ? "Verified" : "Pending"}
+                </TableCell>
+                <TableCell>
+                  <span title={booking?.totalAmountSpent}>
+                    ₹ {booking?.totalAmountSpent}
+                  </span>
+                </TableCell>
+                <TableCell>{booking?.totalBookings}</TableCell>
+                <TableCell>{booking?.totalReviews}</TableCell>
+                <TableCell className="flex">
+                  {" "}
+                  <Star className="h-4 w-4 text-yellow-400 ml-1" />{" "}
+                  <span className="pl-2">{booking?.userId?.averageRating}</span>
+                </TableCell>
 
-              {/* <TableCell className="text-right">
+                {/* <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -368,27 +381,46 @@ export default function BookingsPage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell> */}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {bookings && bookings?.length === 0 && (
+          <div className="text-center py-10 text-gray-500 font-medium">
+            {date?.from && !date?.to && (
+              <>Cannot select single date. Reselect the date range.</>
+            )}
+
+            {date?.from && date?.to && (
+              <>No bookings found for the selected date range.</>
+            )}
+          </div>
+        )}
+        <div className="text-center py-10 text-gray-500 font-medium">
+          {mssg ? <>Cannot select same date. Reselect the date range.</> : null}
+        </div>
+      </>
     );
   };
   const sendData = async () => {
     await sendRejectionToUser();
   };
-  const exportCheckinDate = date.from.toLocaleString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-  });
-  const arrayCheckinDate = exportCheckinDate.split("/");
-  const exportCheckoutDate = date.to.toLocaleString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-  });
-  const arrayCheckoutDate = exportCheckoutDate.split("/");
+  const exportCheckinDate =
+    date.from &&
+    date.from.toLocaleString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
+  const arrayCheckinDate = date.from && exportCheckinDate.split("/");
+  const exportCheckoutDate =
+    date.to &&
+    date.to.toLocaleString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
+  const arrayCheckoutDate = date.to && exportCheckoutDate.split("/");
   return (
     <div
       className={
@@ -431,19 +463,42 @@ export default function BookingsPage() {
                 mode="range"
                 defaultMonth={date?.from}
                 selected={date}
-                onSelect={setDate}
+                // onSelect={setDate}
+                // numberOfMonths={2}
+                onSelect={(range) => {
+                  // if (
+                  //   range.to.toLocaleDateString() ==
+                  //   range.from.toLocaleDateString()
+                  // )
+                  //   toast.error("Select two dates for date range");
+                  if (!range?.from) {
+                    // 👇 fallback when user deselects
+                    toast.error("Cannot select date twice");
+                    return;
+                  }
+                  if (!range?.to) {
+                    toast.error("Select two dates for date range");
+                  }
+
+                  // Normal value
+                  setDate(range);
+                }}
                 numberOfMonths={2}
               />
             </PopoverContent>
           </Popover>
           <Button
             className="mt-4 w-full md:mt-0 bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
-            onClick={() =>
-              onGetExporProduct(
-                `Guest_Booking_History_${arrayCheckinDate[0]}${arrayCheckinDate[1]}${arrayCheckinDate[2]}_${arrayCheckoutDate[0]}${arrayCheckoutDate[1]}${arrayCheckoutDate[2]}`,
-                "GuestBookingHistoryExport"
-              )
-            }
+            onClick={() => {
+              if (!date?.from || !date?.to) {
+                toast.error("Select both dates on calendar before export");
+              } else {
+                onGetExporProduct(
+                  `Guest_Booking_History_${arrayCheckinDate[0]}${arrayCheckinDate[1]}${arrayCheckinDate[2]}_${arrayCheckoutDate[0]}${arrayCheckoutDate[1]}${arrayCheckoutDate[2]}`,
+                  "GuestBookingHistoryExport"
+                );
+              }
+            }}
           >
             <Download className="mr-2 h-4 w-4" />
             Export CSV
@@ -511,7 +566,7 @@ export default function BookingsPage() {
                       ?.toLowerCase()
                       .includes(hostSearch?.toLowerCase())
                   )
-                  .map((item) => (
+                  ?.map((item) => (
                     <SelectItem value={item?.host}>
                       {item?.hostEmail}
                     </SelectItem>

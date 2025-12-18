@@ -89,7 +89,7 @@ const StatusKyc = ({ kyc, bank }) => {
     if (process.env.NEXT_PUBLIC_ENV === "dev") {
       console.log("ssss", bank, kyc);
     }
-    if (kyc == "completed" && bank == true) {
+    if (kyc == true && bank == true) {
       return "bg-green-100 text-green-800";
     } else {
       return "bg-red-100 text-red-800";
@@ -120,8 +120,9 @@ const getFilteredListings = async (page = 1, limit = 10, status = "all") => {
           },
         }
       );
+      const result = await response.data;
 
-      return response.data;
+      return result;
     } catch (error) {
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
@@ -525,8 +526,9 @@ export function ListingsTable() {
         header: "KYC/Bank Status",
         cell: ({ row }) => {
           const listing = row.original; // Access actual data
+          console.log("r", listing);
           return (
-            <StatusKyc kyc={listing.kycStatus} bank={listing.bankDetails} />
+            <StatusKyc kyc={listing.host.kyc} bank={listing.bankDetails} />
           );
         },
       },
