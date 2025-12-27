@@ -120,9 +120,7 @@ export default function BookingsPage() {
       }
     }
   };
-  React.useEffect(() => {
-    fetchHostEmails();
-  }, []);
+
   const fetchData = async () => {
     const getLocalData = await localStorage.getItem("token");
     const data = JSON.parse(getLocalData);
@@ -157,8 +155,11 @@ export default function BookingsPage() {
         if (process.env.NEXT_PUBLIC_ENV === "dev") {
           console.log("data ext", result);
         }
+
         const final = await result.data;
         setHosts(final);
+        const emails = await result.allActiveHostEmails;
+        setHostEmail(emails);
       } catch (err) {
         console.error(err);
       }
@@ -232,7 +233,7 @@ export default function BookingsPage() {
       return (
         <div className="py-10 text-center">
           <h3 className="text-lg font-medium text-gray-900">
-            No bookings found.
+            No Host History Found.
           </h3>
           <p className="mt-2 text-sm text-gray-500">
             Looks like you haven't received any bookings yet.
@@ -304,7 +305,7 @@ export default function BookingsPage() {
                 <TableRow key={item._id}>
                   <TableCell className="font-medium">
                     <span
-                      title={item?.host?.firstName + " " + item?.host?.lastName}
+                      title={item?.firstName + " " + item?.lastName}
                       onClick={() =>
                         router.push(
                           `/dashboard/host-history/host-profile?hostId=${item?.host?._id}`
@@ -312,26 +313,21 @@ export default function BookingsPage() {
                       }
                       className="underline cursor-pointer"
                     >
-                      {checkLength(
-                        item?.host?.firstName + " " + item?.host?.lastName
-                      )}
+                      {checkLength(item?.firstName + " " + item?.lastName)}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span title={item?.hostEmail}>
-                      {" "}
-                      {checkLength(item?.hostEmail)}
-                    </span>
+                    <span title={item?.email}> {checkLength(item?.email)}</span>
                   </TableCell>
-                  <TableCell>{item?.host?.phoneNumber}</TableCell>
+                  <TableCell>{item?.phoneNumber}</TableCell>
                   <TableCell>
-                    <span className="">{item?.totalProperty}</span>
+                    <span className="">{item?.activePropertyCount}</span>
                   </TableCell>
 
                   <TableCell>
-                    {item?.host?.kyc == true ? "Verified" : "Pending"}
+                    {item?.kyc == true ? "Verified" : "Pending"}
                   </TableCell>
-                  <TableCell>{item?.totalReviews}</TableCell>
+                  <TableCell>{item?.reviewCount}</TableCell>
                   <TableCell className="flex">
                     {" "}
                     <Star className="h-4 mr-2 w-4 text-yellow-400 ml-1" />{" "}
@@ -575,14 +571,10 @@ export default function BookingsPage() {
                 </SelectItem>
                 {hostEmail
                   ?.filter((item) =>
-                    item?.hostEmail
-                      ?.toLowerCase()
-                      .includes(hostSearch?.toLowerCase())
+                    item?.toLowerCase().includes(hostSearch?.toLowerCase())
                   )
                   .map((item) => (
-                    <SelectItem value={item?.host}>
-                      {item?.hostEmail}
-                    </SelectItem>
+                    <SelectItem value={item}>{item}</SelectItem>
                   ))}
               </div>
             </SelectContent>

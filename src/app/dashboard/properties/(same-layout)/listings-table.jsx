@@ -105,15 +105,20 @@ const StatusKyc = ({ kyc, bank }) => {
   );
 };
 // -------------- API Helpers -----------------
-const getFilteredListings = async (page = 1, limit = 10, status = "all") => {
+const getFilteredListings = async (
+  searchTerm,
+  statusFilter,
+  page = 1,
+  limit = 10
+) => {
   const getLocalData = await localStorage.getItem("token");
   const data = JSON.parse(getLocalData);
   if (data) {
     try {
       const response = await axios.get(
-        `${API_URL}/properties/admin/filtered-listings`,
+        `${API_URL}/properties/admin/filtered-listings?search=${searchTerm}&status=${statusFilter}`,
         {
-          params: { page, limit, status },
+          params: { page, limit },
           headers: {
             Authorization: `Bearer ${data}`,
             "Content-Type": "application/json",
@@ -227,6 +232,7 @@ export function ListingsTable() {
   const [imagePopupOpen, setImagePopupOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const [selectedPropertyName, setSelectedPropertyName] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [bulk, setBulk] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all"); // State to track the selected status filter
   const [totalListings, setTotalListings] = useState(0);
@@ -234,25 +240,28 @@ export function ListingsTable() {
   const [totalPendingListings, setTotalPendingListings] = useState(0);
   const [listingsToday, setListingsToday] = useState(0);
 
-  const fetchFilteredListings = useCallback(
-    async (status = statusFilter) => {
-      setLoading(true);
-      try {
-        const response = await getFilteredListings(page, 10, status); // Pass the selected status filter
-        setData(response.properties);
-        setTotalListings(response.totalListings);
-        setTotalActiveListings(response.totalActiveListings);
-        setTotalPendingListings(response.totalPendingListings);
-        setListingsToday(response.listingsToday);
-      } catch (error) {
-        console.error("Failed to fetch filtered listings:", error);
-        toast.error(error.message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [page, statusFilter]
-  );
+  const fetchFilteredListings = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await getFilteredListings(
+        searchTerm,
+        statusFilter,
+        page,
+        10
+      ); // Pass the selected status filter
+
+      setData(response.properties);
+      setTotalListings(response.totalList);
+      setTotalActiveListings(response.totalActiveListings);
+      setTotalPendingListings(response.totalProcessingListings);
+      // setListingsToday(response.listingsToday);
+    } catch (error) {
+      console.error("Failed to fetch filtered listings:", error);
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, searchTerm, statusFilter]);
 
   useEffect(() => {
     fetchFilteredListings(statusFilter); // Refetch with new status filter
@@ -798,11 +807,9 @@ export function ListingsTable() {
       {/* ----------- FILTERS & COLUMN VISIBILITY ----------- */}
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter listings..."
-          value={table.getColumn("title")?.getFilterValue() ?? ""}
-          onChange={(event) =>
-            table.getColumn("title")?.setFilterValue(event.target.value)
-          }
+          placeholder="Search using title or email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm bg-white rounded-md"
         />
         <Select
@@ -817,7 +824,7 @@ export function ListingsTable() {
             <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="processing">Pending</SelectItem>
-            <SelectItem value="incomplete">Incomplete</SelectItem>
+            {/* <SelectItem value="incomplete">Incomplete</SelectItem> */}
             <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>

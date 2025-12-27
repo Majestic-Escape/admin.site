@@ -8,6 +8,7 @@ import HostProfile from "./component/host-profile";
 import DialogModal from "../../../components/dialog-modal";
 import { propertyService } from "../../../services/propertyListingService";
 import { Button } from "@/components/ui/button";
+import { toast, Toaster } from "sonner";
 // import PropertyListing from "./components/property-listing";
 // import Location from "./components/location";
 // import ThingsToKnow from "./components/things-to-know";
@@ -139,6 +140,7 @@ export default function DetailView() {
             console.log("ins", propertyId);
           }
           await propertyService.approveListing(propertyId);
+          toast.success("Property successfully listed");
           setApproveDialogOpen(false);
           refetchProperty();
           refetchHost();
@@ -164,6 +166,7 @@ export default function DetailView() {
         }}
         onConfirm={async () => {
           await propertyService.handleConfirmDelist(propertyId);
+          toast.success("Property successfully delisted");
           setDelistDialogOpen(false);
           refetchProperty();
           refetchHost();
@@ -175,8 +178,8 @@ export default function DetailView() {
           <>
             <div className="mb-4 md:mb-6 ">
               <span className="font-bold">Property Status</span> :{" "}
-              {propertyData?.status.charAt(0).toUpperCase()}
-              {propertyData?.status.slice(1)}
+              {propertyData?.status?.charAt(0)?.toUpperCase()}
+              {propertyData?.status?.slice(1)}
             </div>
             <div className="mb-4 md:mb-6">
               {propertyData?.status != "active" ? (
