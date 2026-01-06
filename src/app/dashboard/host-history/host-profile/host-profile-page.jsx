@@ -334,7 +334,7 @@ export default function HostProfilePage() {
             ) : null}
             <ProfileItem label="KYC Status" />
             <ProfileItem label={profile.kyc ? "Completed" : "Pending"} />
-            {!profile.kyc && kycData.length != 0 ? (
+            {!profile.kyc && kycData?.length != 0 ? (
               kycData?.acceptedTerms?.general == false ? (
                 <>
                   {" "}
@@ -384,10 +384,12 @@ export default function HostProfilePage() {
                 {" "}
                 <ProfileItem
                   label={
-                    propertys.length > 1 ? "Total Properties" : "Total Property"
+                    propertys?.length > 1
+                      ? "Total Properties"
+                      : "Total Property"
                   }
                 />
-                <ProfileItem label={propertys.length} />
+                <ProfileItem label={propertys?.length} />
               </>
             ) : null}
           </div>
