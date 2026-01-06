@@ -140,12 +140,13 @@ export default function HostProfilePage() {
         const property = await result.properties;
         setPropertys(property);
         const profile = await result.hostProfile;
-        setGuestProfile(profile);
+        // setGuestProfile(profile);
       } catch (err) {
         console.error(err);
       }
     }
   };
+  console.log("Guest", guestProfile);
   if (process.env.NEXT_PUBLIC_ENV === "dev") {
     console.log(propertys);
   }
@@ -180,9 +181,9 @@ export default function HostProfilePage() {
     }
   };
 
-  // React.useEffect(() => {
-  //   fetchUserProfile();
-  // }, []);
+  React.useEffect(() => {
+    fetchUserProfile();
+  }, []);
   React.useEffect(() => {
     fetchData();
   }, [searchTerm, selectPlaceType, hostId, selectPropertyType]);
