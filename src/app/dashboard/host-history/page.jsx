@@ -88,8 +88,12 @@ export default function BookingsPage() {
   const [hostEmail, setHostEmail] = React.useState([]);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [page, setPage] = React.useState(1);
   const [skip, setSkip] = React.useState(0);
   const [count, setCount] = React.useState(0);
+  const [totalPages, setTotalPages] = React.useState(1);
+  const [totalItems, setTotalItems] = React.useState(0);
+
   // Simulate a 2 second loading delay to show the skeleton UI.
   const getDate = (item) => {
     const d = new Date(item);
@@ -133,7 +137,7 @@ export default function BookingsPage() {
     if (data) {
       try {
         const response = await fetch(
-          `${API_URL}/properties/admin-filter?hostId=${selectHost}&search=${searchTerm}&limit=${rowsPerPage}`, //&skip=${rowsPerPage * skip}&host=${"host"}
+          `${API_URL}/properties/admin-filter?hostId=${selectHost}&search=${searchTerm}&limit=${rowsPerPage}&page=${page}`, //&skip=${rowsPerPage * skip}&host=${"host"}
           {
             method: "GET",
             headers: {
@@ -155,7 +159,8 @@ export default function BookingsPage() {
         if (process.env.NEXT_PUBLIC_ENV === "dev") {
           console.log("data ext", result);
         }
-
+        setTotalPages(result.totalPages || 1);
+        setTotalItems(result.total || 0);
         const final = await result.data;
         setHosts(final);
         const emails = await result.allActiveHostEmails;
@@ -167,8 +172,12 @@ export default function BookingsPage() {
   };
   React.useEffect(() => {
     fetchData();
-  }, [searchTerm, selectHost, date]);
-
+  }, [searchTerm, selectHost, date, page]);
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
+    }
+  };
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -277,6 +286,7 @@ export default function BookingsPage() {
       }
       return value;
     }
+
     return (
       <>
         <Table>
@@ -306,11 +316,11 @@ export default function BookingsPage() {
                   <TableCell className="font-medium">
                     <span
                       title={item?.firstName + " " + item?.lastName}
-                      onClick={() =>
+                      onClick={() => {
                         router.push(
-                          `/dashboard/host-history/host-profile?hostId=${item?.host?._id}`
-                        )
-                      }
+                          `/dashboard/host-history/host-profile?hostId=${item?._id}`
+                        );
+                      }}
                       className="underline cursor-pointer"
                     >
                       {checkLength(item?.firstName + " " + item?.lastName)}
@@ -388,6 +398,32 @@ export default function BookingsPage() {
             )}
           </TableBody>
         </Table>
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <div className="flex-1 text-sm text-muted-foreground">
+            {/* Show pagination info */}
+            Page {page} of {totalPages} (Total: {totalItems} hosts)
+          </div>
+          <div className="space-x-2">
+            <Button
+              className="bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 1 || loading}
+            >
+              Previous
+            </Button>
+            <Button
+              className="bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page >= totalPages || loading} // Changed condition
+            >
+              Next
+            </Button>
+          </div>
+        </div>
         {/* <div className="mt-4 flex items-center justify-between">
           <small>
             Showing {skip == 0 ? 0 : skip * rowsPerPage} to{" "}

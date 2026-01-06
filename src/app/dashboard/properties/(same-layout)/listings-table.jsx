@@ -100,7 +100,7 @@ const StatusKyc = ({ kyc, bank }) => {
     <span
       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(kyc, bank)}`}
     >
-      {kyc == "completed" && bank === true ? "Completed" : "Pending"}
+      {kyc == true && bank === true ? "Completed" : "Pending"}
     </span>
   );
 };
@@ -537,7 +537,7 @@ export function ListingsTable() {
           const listing = row.original; // Access actual data
           console.log("r", listing);
           return (
-            <StatusKyc kyc={listing.host.kyc} bank={listing.bankDetails} />
+            <StatusKyc kyc={listing?.host?.kyc} bank={listing?.host?.bank} />
           );
         },
       },

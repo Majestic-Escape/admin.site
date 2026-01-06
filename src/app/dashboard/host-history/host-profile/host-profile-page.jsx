@@ -67,6 +67,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { properties } from "../../../../lib/property-type";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function HostProfilePage() {
   const [propertys, setPropertys] = React.useState([]);
@@ -86,11 +87,21 @@ export default function HostProfilePage() {
   const [selectPropertyType, setselectPropertyType] = React.useState("");
   const [propertyTypeSearch, setPropertyTypeSearch] = React.useState("");
   const [selectPlaceType, setSelectPlaceType] = React.useState("");
+  const [kycData, setKycData] = React.useState([]);
   const searchParams = useSearchParams();
   const hostId = searchParams.get("hostId");
   // Simulate a 2 second loading delay to show the skeleton UI.
+  // const getDate = (item) => {
+  //   const d = new Date(item);
+  //   d.setUTCHours(0, 0, 0, 0);
+  //   return d.toISOString();
+  // };
   const getDate = (item) => {
+    if (!item) return null;
+
     const d = new Date(item);
+    if (isNaN(d)) return null;
+
     d.setUTCHours(0, 0, 0, 0);
     return d.toISOString();
   };
@@ -122,8 +133,14 @@ export default function HostProfilePage() {
         }
         const result = await response.json();
 
-        const final = await result.data;
-        setPropertys(final);
+        // const final = await result.data;
+        const kyc = await result.kycData;
+        // console.log("bosss", result);
+        setKycData(kyc[0]);
+        const property = await result.properties;
+        setPropertys(property);
+        const profile = await result.hostProfile;
+        setGuestProfile(profile);
       } catch (err) {
         console.error(err);
       }
@@ -162,9 +179,10 @@ export default function HostProfilePage() {
       }
     }
   };
-  React.useEffect(() => {
-    fetchUserProfile();
-  }, []);
+
+  // React.useEffect(() => {
+  //   fetchUserProfile();
+  // }, []);
   React.useEffect(() => {
     fetchData();
   }, [searchTerm, selectPlaceType, hostId, selectPropertyType]);
@@ -213,17 +231,41 @@ export default function HostProfilePage() {
       day: "numeric",
       year: "numeric",
     });
+    const dob = profile?.dob ? new Date(profile.dob) : null;
+
+    const changeUpperCase = (data) => {
+      return data
+        ?.trim()
+        ?.split(" ")
+        ?.map(
+          (item) => item.charAt(0).toUpperCase() + item.slice(1).toLowerCase()
+        )
+        ?.join(" ");
+    };
     return (
       <div className="p-8">
         <div className="bg-white flex flex-col items-center px-4 py-6 min-h-0 box-border w-full max-w-3xl mx-auto">
           <div className="flex flex-col items-center space-y-4">
             <div className="relative overflow-hidden">
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-black flex items-center justify-center text-white text-5xl font-bold">
-                A
-              </div>
-              <button className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-white shadow-md px-3 py-1 rounded-full text-sm">
+              {guestProfile?.profilePicture ? (
+                <Avatar className="w-24 h-24 border-2 border-white shadow-sm mx-auto">
+                  <AvatarImage
+                    src={
+                      guestProfile?.profilePicture ||
+                      "/placeholder.svg?height=96&width=96"
+                    }
+                    alt={`H`}
+                    className="object-cover"
+                  />
+                </Avatar>
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-black flex items-center justify-center text-white text-5xl font-bold">
+                  H
+                </div>
+              )}
+              {/* <button className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-white shadow-md px-3 py-1 rounded-full text-sm">
                 Add
-              </button>
+              </button> */}
             </div>
 
             <div className="text-center max-w-md">
@@ -238,16 +280,118 @@ export default function HostProfilePage() {
           </div>
 
           <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-            <ProfileItem label="Address" />
-            <ProfileItem
-              label={profile?.address?.city + ", " + profile?.address?.state}
-            />
-            <ProfileItem label="Email" />
-            <ProfileItem label={profile?.email} />
-            <ProfileItem label="Date of Birth" />
-            <ProfileItem
-              label={fmt.format(new Date(profile?.dob.split("T")[0]))}
-            />
+            {profile?.address?.street ||
+            profile?.address?.city ||
+            profile?.address?.state ? (
+              <>
+                <ProfileItem label="Address" />
+                <ProfileItem
+                  label={
+                    (profile?.address?.street &&
+                      profile?.address?.street + ", ") +
+                    (profile?.address?.city && profile?.address?.city + ", ") +
+                    (profile?.address?.state && profile?.address?.state + ", ")
+                  }
+                />
+              </>
+            ) : null}
+            {profile?.email ? (
+              <>
+                <ProfileItem label="Email" />
+                <ProfileItem label={profile?.email} />
+              </>
+            ) : null}
+            {dob ? (
+              <>
+                <ProfileItem label="Date of Birth" />
+                <ProfileItem
+                  label={dob && !isNaN(dob) ? fmt.format(dob) : "N/A"}
+                />
+              </>
+            ) : null}
+            {profile?.about ? (
+              <>
+                <ProfileItem label="About" />
+                <ProfileItem label={profile?.about && profile?.about} />
+              </>
+            ) : null}
+            {profile?.languages?.length != 0 ? (
+              <>
+                <ProfileItem label="Languages" />
+                <ProfileItem
+                  label={
+                    profile?.languages &&
+                    profile?.languages.map((item, index) => {
+                      if (profile?.languages?.length !== index + 1) {
+                        return item + ", ";
+                      } else {
+                        return item;
+                      }
+                    })
+                  }
+                />
+              </>
+            ) : null}
+            <ProfileItem label="KYC Status" />
+            <ProfileItem label={profile.kyc ? "Completed" : "Pending"} />
+            {!profile.kyc && kycData?.length != 0 ? (
+              kycData?.acceptedTerms?.general == false ? (
+                <>
+                  {" "}
+                  <ProfileItem label="KYC Form" />
+                  <ProfileItem label={"Step 4 Pending"} />
+                </>
+              ) : kycData?.gstInfo?.isVerified == false ? (
+                <>
+                  {" "}
+                  <ProfileItem label="KYC Form" />
+                  <ProfileItem label={"Step 3 Pending"} />
+                </>
+              ) : kycData?.documentInfo?.isVerified == false ? (
+                <>
+                  <ProfileItem label="KYC Form" />
+                  <ProfileItem label={"Step 2 Pending"} />
+                </>
+              ) : (
+                <>
+                  {" "}
+                  <ProfileItem label="KYC Form" />
+                  <ProfileItem label={"Step 1 Pending"} />
+                </>
+              )
+            ) : (
+              <>
+                <ProfileItem label="KYC Form" />
+                <ProfileItem label={"Did not start"} />
+              </>
+            )}
+            {profile.kyc || kycData?.documentInfo?.isVerified == true ? (
+              <>
+                <ProfileItem label="Document Type" />
+                <ProfileItem
+                  label={changeUpperCase(kycData?.documentInfo?.documentType)}
+                />
+              </>
+            ) : null}
+            {kycData?.gstInfo?.isVerified == true ? (
+              <>
+                <ProfileItem label="GST Number" />
+                <ProfileItem label={kycData?.gstInfo?.gstNumber} />
+              </>
+            ) : null}
+            {propertys.length != 0 ? (
+              <>
+                {" "}
+                <ProfileItem
+                  label={
+                    propertys?.length > 1
+                      ? "Total Properties"
+                      : "Total Property"
+                  }
+                />
+                <ProfileItem label={propertys?.length} />
+              </>
+            ) : null}
           </div>
         </div>
       </div>
@@ -260,7 +404,7 @@ export default function HostProfilePage() {
 
       // Check if the action result contains data and if it's an array
       if (propertys && Array.isArray(propertys)) {
-        const dataToExport = propertys.map((pro) => ({
+        const dataToExport = propertys?.map((pro) => ({
           id: pro?._id,
           property_title: pro?.title,
           city: pro?.address?.city,
@@ -297,17 +441,28 @@ export default function HostProfilePage() {
       }
     }
   };
-  const exportCheckinDate = date.from.toLocaleString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-  });
+  // const exportCheckinDate = date.from.toLocaleString("en-US", {
+  //   month: "2-digit",
+  //   day: "2-digit",
+  //   year: "numeric",
+  // });
+  const exportCheckinDate =
+    date?.from && !isNaN(date.from)
+      ? date.from.toLocaleString("en-US", {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+        })
+      : "";
   const arrayCheckinDate = exportCheckinDate.split("/");
-  const exportCheckoutDate = date.to.toLocaleString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-  });
+  const exportCheckoutDate =
+    date?.to && !isNaN(date.to)
+      ? date.to.toLocaleString("en-US", {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+        })
+      : "";
   const arrayCheckoutDate = exportCheckoutDate.split("/");
   const renderBookingTable = (profile) => {
     if (loading) {
@@ -321,7 +476,7 @@ export default function HostProfilePage() {
       );
     }
 
-    if (!loading && propertys?.length == 0) {
+    if (!loading && profile?.length == 0) {
       return (
         <div className="py-10 text-center">
           <h3 className="text-lg font-medium text-gray-900">
@@ -387,7 +542,7 @@ export default function HostProfilePage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {propertys.map((item) => (
+          {propertys?.map((item) => (
             <TableRow key={item._id}>
               <TableCell className="font-medium">
                 <span title={item?.title}>{checkLength(item?.title)}</span>
@@ -491,7 +646,7 @@ export default function HostProfilePage() {
                         ?.toLowerCase()
                         ?.includes(propertyTypeSearch.toLowerCase())
                     )
-                    .map((item) => (
+                    ?.map((item) => (
                       <SelectItem value={item?.route}>{item?.label}</SelectItem>
                     ))}
                 </div>
