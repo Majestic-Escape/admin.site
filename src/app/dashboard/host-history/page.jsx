@@ -306,11 +306,11 @@ export default function BookingsPage() {
                   <TableCell className="font-medium">
                     <span
                       title={item?.firstName + " " + item?.lastName}
-                      onClick={() =>
+                      onClick={() => {
                         router.push(
-                          `/dashboard/host-history/host-profile?hostId=${item?.host?._id}`
-                        )
-                      }
+                          `/dashboard/host-history/host-profile?hostId=${item?._id}`
+                        );
+                      }}
                       className="underline cursor-pointer"
                     >
                       {checkLength(item?.firstName + " " + item?.lastName)}
