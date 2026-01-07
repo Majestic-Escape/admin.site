@@ -67,6 +67,7 @@ import { addDays, addMonths, format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function BookingsPage() {
@@ -296,6 +297,8 @@ export default function BookingsPage() {
               <TableHead className="w-[180px]">Email Address</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Total Property</TableHead>
+              <TableHead>Active Property</TableHead>
+              <TableHead>Inactive Property</TableHead>
 
               <TableHead className="w-[180px]">Kyc Status</TableHead>
               <TableHead>Total Reviews</TableHead>
@@ -331,9 +334,14 @@ export default function BookingsPage() {
                   </TableCell>
                   <TableCell>{item?.phoneNumber}</TableCell>
                   <TableCell>
+                    <span className="">{item?.allPropertyCount}</span>
+                  </TableCell>
+                  <TableCell>
                     <span className="">{item?.activePropertyCount}</span>
                   </TableCell>
-
+                  <TableCell>
+                    <span className="">{item?.inactivePropertyCount}</span>
+                  </TableCell>
                   <TableCell>
                     {item?.kyc == true ? "Verified" : "Pending"}
                   </TableCell>
