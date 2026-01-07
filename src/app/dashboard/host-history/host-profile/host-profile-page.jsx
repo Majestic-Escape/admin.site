@@ -69,6 +69,8 @@ import { toast } from "sonner";
 import { properties } from "../../../../lib/property-type";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { useAuth } from "@/contexts/AuthContext";
+
 export default function HostProfilePage() {
   const [propertys, setPropertys] = React.useState([]);
   const router = useRouter();
@@ -76,7 +78,11 @@ export default function HostProfilePage() {
     from: addMonths(new Date(), -1),
     to: new Date(),
   });
-  const [guestProfile, setGuestProfile] = React.useState();
+
+  const searchParams = useSearchParams();
+  const hostId = searchParams.get("hostId");
+
+  const [guestProfile, setGuestProfile] = React.useState([]);
   const [selectedBookings, setSelectedBookings] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [activeTab, setActiveTab] = React.useState("all");
@@ -87,9 +93,12 @@ export default function HostProfilePage() {
   const [selectPropertyType, setselectPropertyType] = React.useState("");
   const [propertyTypeSearch, setPropertyTypeSearch] = React.useState("");
   const [selectPlaceType, setSelectPlaceType] = React.useState("");
+
   const [kycData, setKycData] = React.useState([]);
-  const searchParams = useSearchParams();
-  const hostId = searchParams.get("hostId");
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [page, setPage] = React.useState(1);
+  const [totalPages, setTotalPages] = React.useState(1);
+  const [totalItems, setTotalItems] = React.useState(0);
   // Simulate a 2 second loading delay to show the skeleton UI.
   // const getDate = (item) => {
   //   const d = new Date(item);
@@ -115,7 +124,7 @@ export default function HostProfilePage() {
     if (data) {
       try {
         const response = await fetch(
-          `${API_URL}/properties/active/filter/${hostId}?search=${searchTerm}&placeType=${selectPlaceType}&propertyType=${selectPropertyType}`,
+          `${API_URL}/properties/active/filter/${hostId}?search=${searchTerm}&placeType=${selectPlaceType}&propertyType=${selectPropertyType}&limit=${rowsPerPage}&page=${page}`,
           {
             method: "GET",
             headers: {
@@ -136,17 +145,20 @@ export default function HostProfilePage() {
         // const final = await result.data;
         const kyc = await result.kycData;
         // console.log("bosss", result);
-        setKycData(kyc[0]);
+        console.log("Guest", result);
+        setKycData(kyc);
         const property = await result.properties;
         setPropertys(property);
         const profile = await result.hostProfile;
-        // setGuestProfile(profile);
+        setGuestProfile(profile);
+        setTotalPages(result.totalPages || 1);
+        setTotalItems(result.stats.totalProperties || 0);
       } catch (err) {
         console.error(err);
       }
     }
   };
-  console.log("Guest", guestProfile);
+
   if (process.env.NEXT_PUBLIC_ENV === "dev") {
     console.log(propertys);
   }
@@ -181,13 +193,18 @@ export default function HostProfilePage() {
     }
   };
 
-  React.useEffect(() => {
-    fetchUserProfile();
-  }, []);
+  // React.useEffect(() => {
+  //   fetchUserProfile();
+  // }, []);
   React.useEffect(() => {
     fetchData();
-  }, [searchTerm, selectPlaceType, hostId, selectPropertyType]);
+  }, [searchTerm, selectPlaceType, hostId, selectPropertyType, page]);
 
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
+    }
+  };
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -248,7 +265,7 @@ export default function HostProfilePage() {
         <div className="bg-white flex flex-col items-center px-4 py-6 min-h-0 box-border w-full max-w-3xl mx-auto">
           <div className="flex flex-col items-center space-y-4">
             <div className="relative overflow-hidden">
-              {guestProfile?.profilePicture ? (
+              {guestProfile?.profilePicture?.length != 0 ? (
                 <Avatar className="w-24 h-24 border-2 border-white shadow-sm mx-auto">
                   <AvatarImage
                     src={
@@ -335,7 +352,7 @@ export default function HostProfilePage() {
             ) : null}
             <ProfileItem label="KYC Status" />
             <ProfileItem label={profile.kyc ? "Completed" : "Pending"} />
-            {!profile.kyc && kycData?.length != 0 ? (
+            {profile.kyc == false && kycData?.length != 0 ? (
               kycData?.acceptedTerms?.general == false ? (
                 <>
                   {" "}
@@ -490,9 +507,9 @@ export default function HostProfilePage() {
     const StatusPill = ({ status }) => {
       const getStatusColor = (status) => {
         switch (status) {
-          case "confirmed":
+          case "active":
             return "bg-green-100 text-green-800";
-          case "rejected":
+          case "inactive":
             return "bg-red-100 text-red-800";
           case "cancelled":
             return "bg-orange-100 text-orange-800";
@@ -525,50 +542,84 @@ export default function HostProfilePage() {
     }
 
     return (
-      <Table className="overflow-x-auto">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[180px]">Title</TableHead>
-            <TableHead className="w-[180px]">Location</TableHead>
-            <TableHead className="w-[180px]">Pincode</TableHead>
+      <>
+        <Table className="overflow-x-auto">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[180px]">Title</TableHead>
+              <TableHead className="w-[180px]">Location</TableHead>
+              <TableHead className="w-[180px]">Pincode</TableHead>
 
-            <TableHead>Base Price</TableHead>
-            <TableHead>
-              <Button variant="ghost" className="p-0 hover:bg-transparent">
-                <span>Type</span>
-                <SortAsc className="ml-2 h-4 w-4" />
-              </Button>
-            </TableHead>
-            <TableHead>Place</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {propertys?.map((item) => (
-            <TableRow key={item._id}>
-              <TableCell className="font-medium">
-                <span title={item?.title}>{checkLength(item?.title)}</span>
-              </TableCell>
-              <TableCell>
-                <span title={item?.address?.city + " " + item?.address?.state}>
-                  {checkLength(
-                    item?.address?.city + ", " + item?.address?.state
-                  )}
-                </span>
-              </TableCell>
-              <TableCell>{item?.address?.pincode}</TableCell>
-
-              <TableCell>₹ {item?.basePrice}</TableCell>
-              <TableCell>
-                {item?.propertyType[0].toUpperCase() +
-                  item?.propertyType?.slice(1)}
-              </TableCell>
-              <TableCell>
-                <StatusPill status={item?.placeType} />
-              </TableCell>
+              <TableHead>Base Price</TableHead>
+              <TableHead>
+                <Button variant="ghost" className="p-0 hover:bg-transparent">
+                  <span>Type</span>
+                  <SortAsc className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>Place</TableHead>
+              <TableHead>Status</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {propertys?.map((item) => (
+              <TableRow key={item._id}>
+                <TableCell className="font-medium">
+                  <span title={item?.title}>{checkLength(item?.title)}</span>
+                </TableCell>
+                <TableCell>
+                  <span
+                    title={item?.address?.city + " " + item?.address?.state}
+                  >
+                    {checkLength(
+                      item?.address?.city + ", " + item?.address?.state
+                    )}
+                  </span>
+                </TableCell>
+                <TableCell>{item?.address?.pincode}</TableCell>
+
+                <TableCell>₹ {item?.basePrice}</TableCell>
+                <TableCell>
+                  {item?.propertyType[0].toUpperCase() +
+                    item?.propertyType?.slice(1)}
+                </TableCell>
+                <TableCell>
+                  <StatusPill status={item?.placeType} />
+                </TableCell>
+                <TableCell>
+                  <StatusPill status={item?.status} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <div className="flex-1 text-sm text-muted-foreground">
+            {/* Show pagination info */}
+            Page {page} of {totalPages} (Total: {totalItems} properties)
+          </div>
+          <div className="space-x-2">
+            <Button
+              className="bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 1 || loading}
+            >
+              Previous
+            </Button>
+            <Button
+              className="bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page >= totalPages || loading} // Changed condition
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      </>
     );
   };
 
