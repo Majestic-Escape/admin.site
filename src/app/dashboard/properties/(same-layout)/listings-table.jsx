@@ -84,12 +84,12 @@ const StatusPill = ({ status }) => {
     </span>
   );
 };
-const StatusKyc = ({ kyc, bank }) => {
-  const getStatusColor = (kyc, bank) => {
+const StatusKyc = ({ data }) => {
+  const getStatusColor = (data) => {
     if (process.env.NEXT_PUBLIC_ENV === "dev") {
       console.log("ssss", bank, kyc);
     }
-    if (kyc == true && bank == true) {
+    if (data == true) {
       return "bg-green-100 text-green-800";
     } else {
       return "bg-red-100 text-red-800";
@@ -98,9 +98,9 @@ const StatusKyc = ({ kyc, bank }) => {
 
   return (
     <span
-      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(kyc, bank)}`}
+      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(data)}`}
     >
-      {kyc == true && bank === true ? "Completed" : "Pending"}
+      {data === true ? "Completed" : "Pending"}
     </span>
   );
 };
@@ -462,6 +462,7 @@ export function ListingsTable() {
           <input
             type="checkbox"
             className="accent-primaryGreen"
+            data-no-navigate="true"
             checked={table.getIsAllPageRowsSelected()}
             onChange={(e) => table.toggleAllPageRowsSelected(e.target.checked)}
           />
@@ -487,6 +488,7 @@ export function ListingsTable() {
             <Image
               src={photos[0] || "/placeholder.svg"}
               alt="Property thumbnail"
+              // data-no-navigate="true"
               width={50}
               height={50}
               className="rounded-md cursor-pointer"
@@ -532,13 +534,19 @@ export function ListingsTable() {
         header: "Property Type",
       },
       {
-        header: "KYC/Bank Status",
+        header: "KYC Status",
         cell: ({ row }) => {
           const listing = row.original; // Access actual data
           console.log("r", listing);
-          return (
-            <StatusKyc kyc={listing?.host?.kyc} bank={listing?.host?.bank} />
-          );
+          return <StatusKyc data={listing?.host?.kyc} />;
+        },
+      },
+      {
+        header: "Bank Details",
+        cell: ({ row }) => {
+          const listing = row.original; // Access actual data
+          console.log("r", listing);
+          return <StatusKyc data={listing?.host?.bank} />;
         },
       },
       {
@@ -623,7 +631,11 @@ export function ListingsTable() {
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
+                <Button
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  data-no-navigate="true"
+                >
                   <span className="sr-only">Open menu</span>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
@@ -777,12 +789,12 @@ export function ListingsTable() {
       </Dialog>
 
       {/* POPUP FOR PROPERTY IMAGES */}
-      <ImageCarouselPopup
+      {/* <ImageCarouselPopup
         isOpen={imagePopupOpen}
         onClose={() => setImagePopupOpen(false)}
         images={selectedImages}
         propertyName={selectedPropertyName}
-      />
+      /> */}
 
       {/* ----------- STATS CARDS ----------- */}
       <div className="grid grid-cols-4 gap-4 mb-4">
@@ -925,6 +937,17 @@ export function ListingsTable() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={(e) => {
+                    // Check if the clicked element or its parent has data-no-navigate
+                    const noNavigateElement = e.target.closest(
+                      '[data-no-navigate="true"]'
+                    );
+                    if (!noNavigateElement) {
+                      router.push(
+                        `/dashboard/view-property?property=${row.original._id}`
+                      );
+                    }
+                  }}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

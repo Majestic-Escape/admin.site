@@ -301,6 +301,7 @@ export default function BookingsPage() {
               <TableHead>Inactive Property</TableHead>
 
               <TableHead className="w-[180px]">Kyc Status</TableHead>
+              <TableHead className="w-[180px]">Bank Details</TableHead>
               <TableHead>Total Reviews</TableHead>
               <TableHead>
                 <Button variant="ghost" className="p-0 hover:bg-transparent">
@@ -344,6 +345,9 @@ export default function BookingsPage() {
                   </TableCell>
                   <TableCell>
                     {item?.kyc == true ? "Verified" : "Pending"}
+                  </TableCell>
+                  <TableCell>
+                    {item?.bank == true ? "Verified" : "Pending"}
                   </TableCell>
                   <TableCell>{item?.reviewCount}</TableCell>
                   <TableCell className="flex">

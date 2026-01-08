@@ -93,7 +93,8 @@ export default function HostProfilePage() {
   const [selectPropertyType, setselectPropertyType] = React.useState("");
   const [propertyTypeSearch, setPropertyTypeSearch] = React.useState("");
   const [selectPlaceType, setSelectPlaceType] = React.useState("");
-
+  const [active, setActive] = React.useState();
+  const [inactive, setInactive] = React.useState();
   const [kycData, setKycData] = React.useState([]);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [page, setPage] = React.useState(1);
@@ -153,6 +154,8 @@ export default function HostProfilePage() {
         setGuestProfile(profile);
         setTotalPages(result.totalPages || 1);
         setTotalItems(result.stats.totalProperties || 0);
+        setActive(result.stats.activeProperties || 0);
+        setInactive(result.stats.inactiveProperties || 0);
       } catch (err) {
         console.error(err);
       }
@@ -377,13 +380,13 @@ export default function HostProfilePage() {
                   <ProfileItem label={"Step 1 Pending"} />
                 </>
               )
-            ) : (
+            ) : profile.kyc == false && kycData?.length == 0 ? (
               <>
                 <ProfileItem label="KYC Form" />
                 <ProfileItem label={"Did not start"} />
               </>
-            )}
-            {profile.kyc || kycData?.documentInfo?.isVerified == true ? (
+            ) : null}
+            {kycData?.documentInfo?.isVerified == true ? (
               <>
                 <ProfileItem label="Document Type" />
                 <ProfileItem
@@ -397,19 +400,27 @@ export default function HostProfilePage() {
                 <ProfileItem label={kycData?.gstInfo?.gstNumber} />
               </>
             ) : null}
-            {propertys.length != 0 ? (
-              <>
-                {" "}
-                <ProfileItem
-                  label={
-                    propertys?.length > 1
-                      ? "Total Properties"
-                      : "Total Property"
-                  }
-                />
-                <ProfileItem label={propertys?.length} />
-              </>
-            ) : null}
+            <ProfileItem label="Bank Details" />
+            <ProfileItem label={profile.bank ? "Completed" : "Pending"} />
+            {/* {totalItems != 0 ? ( */}
+            <>
+              {" "}
+              <ProfileItem
+                label={totalItems == 1 ? "Total Property" : "Total Properties"}
+              />
+              <ProfileItem label={totalItems} />
+            </>
+            {/* ) : null} */}
+            <ProfileItem
+              label={active == 1 ? "Active Property" : "Active Properties"}
+            />
+            <ProfileItem label={active} />
+            <ProfileItem
+              label={
+                inactive == 1 ? "Inactive Property" : "Inactive Properties"
+              }
+            />
+            <ProfileItem label={inactive} />
           </div>
         </div>
       </div>
@@ -564,7 +575,12 @@ export default function HostProfilePage() {
           <TableBody>
             {propertys?.map((item) => (
               <TableRow key={item._id}>
-                <TableCell className="font-medium">
+                <TableCell
+                  className="font-medium cursor-pointer underline"
+                  onClick={() =>
+                    router.push(`/dashboard/view-property?property=${item._id}`)
+                  }
+                >
                   <span title={item?.title}>{checkLength(item?.title)}</span>
                 </TableCell>
                 <TableCell>
