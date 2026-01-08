@@ -1,7 +1,17 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Carousel } from "@/components/ui/carousel"
-import { CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
-import Image from "next/image"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Carousel } from "@/components/ui/carousel";
+import {
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import Image from "next/image";
 
 export function ImageCarouselPopup({ isOpen, onClose, images, propertyName }) {
   return (
@@ -31,6 +41,5 @@ export function ImageCarouselPopup({ isOpen, onClose, images, propertyName }) {
         </Carousel>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-
