@@ -462,6 +462,7 @@ export function ListingsTable() {
           <input
             type="checkbox"
             className="accent-primaryGreen"
+            data-no-navigate="true"
             checked={table.getIsAllPageRowsSelected()}
             onChange={(e) => table.toggleAllPageRowsSelected(e.target.checked)}
           />
@@ -487,6 +488,7 @@ export function ListingsTable() {
             <Image
               src={photos[0] || "/placeholder.svg"}
               alt="Property thumbnail"
+              // data-no-navigate="true"
               width={50}
               height={50}
               className="rounded-md cursor-pointer"
@@ -629,7 +631,11 @@ export function ListingsTable() {
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
+                <Button
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  data-no-navigate="true"
+                >
                   <span className="sr-only">Open menu</span>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
@@ -783,12 +789,12 @@ export function ListingsTable() {
       </Dialog>
 
       {/* POPUP FOR PROPERTY IMAGES */}
-      <ImageCarouselPopup
+      {/* <ImageCarouselPopup
         isOpen={imagePopupOpen}
         onClose={() => setImagePopupOpen(false)}
         images={selectedImages}
         propertyName={selectedPropertyName}
-      />
+      /> */}
 
       {/* ----------- STATS CARDS ----------- */}
       <div className="grid grid-cols-4 gap-4 mb-4">
@@ -931,6 +937,17 @@ export function ListingsTable() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={(e) => {
+                    // Check if the clicked element or its parent has data-no-navigate
+                    const noNavigateElement = e.target.closest(
+                      '[data-no-navigate="true"]'
+                    );
+                    if (!noNavigateElement) {
+                      router.push(
+                        `/dashboard/view-property?property=${row.original._id}`
+                      );
+                    }
+                  }}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
