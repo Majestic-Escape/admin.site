@@ -380,12 +380,12 @@ export default function HostProfilePage() {
                   <ProfileItem label={"Step 1 Pending"} />
                 </>
               )
-            ) : (
+            ) : profile.kyc == false && kycData?.length == 0 ? (
               <>
                 <ProfileItem label="KYC Form" />
                 <ProfileItem label={"Did not start"} />
               </>
-            )}
+            ) : null}
             {kycData?.documentInfo?.isVerified == true ? (
               <>
                 <ProfileItem label="Document Type" />
@@ -575,7 +575,12 @@ export default function HostProfilePage() {
           <TableBody>
             {propertys?.map((item) => (
               <TableRow key={item._id}>
-                <TableCell className="font-medium">
+                <TableCell
+                  className="font-medium cursor-pointer underline"
+                  onClick={() =>
+                    router.push(`/dashboard/view-property?property=${item._id}`)
+                  }
+                >
                   <span title={item?.title}>{checkLength(item?.title)}</span>
                 </TableCell>
                 <TableCell>
