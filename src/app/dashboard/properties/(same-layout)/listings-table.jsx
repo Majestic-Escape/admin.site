@@ -84,12 +84,12 @@ const StatusPill = ({ status }) => {
     </span>
   );
 };
-const StatusKyc = ({ kyc, bank }) => {
-  const getStatusColor = (kyc, bank) => {
+const StatusKyc = ({ data }) => {
+  const getStatusColor = (data) => {
     if (process.env.NEXT_PUBLIC_ENV === "dev") {
       console.log("ssss", bank, kyc);
     }
-    if (kyc == true && bank == true) {
+    if (data == true) {
       return "bg-green-100 text-green-800";
     } else {
       return "bg-red-100 text-red-800";
@@ -98,9 +98,9 @@ const StatusKyc = ({ kyc, bank }) => {
 
   return (
     <span
-      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(kyc, bank)}`}
+      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(data)}`}
     >
-      {kyc == true && bank === true ? "Completed" : "Pending"}
+      {data === true ? "Completed" : "Pending"}
     </span>
   );
 };
@@ -532,13 +532,19 @@ export function ListingsTable() {
         header: "Property Type",
       },
       {
-        header: "KYC/Bank Status",
+        header: "KYC Status",
         cell: ({ row }) => {
           const listing = row.original; // Access actual data
           console.log("r", listing);
-          return (
-            <StatusKyc kyc={listing?.host?.kyc} bank={listing?.host?.bank} />
-          );
+          return <StatusKyc data={listing?.host?.kyc} />;
+        },
+      },
+      {
+        header: "Bank Details",
+        cell: ({ row }) => {
+          const listing = row.original; // Access actual data
+          console.log("r", listing);
+          return <StatusKyc data={listing?.host?.bank} />;
         },
       },
       {
