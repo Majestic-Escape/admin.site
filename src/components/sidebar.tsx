@@ -36,7 +36,8 @@ export function Sidebar() {
     return pathname.startsWith(href);
   };
 
-  const activeClass = "bg-primary/10 text-primary font-medium";
+  const activeClass = "bg-primaryGreen  text-white hover:bg-brightGreen";
+  //bg-primary/10 text-primary font-medium";
   return (
     <SidebarComponent className="border-r">
       <SidebarHeader>
@@ -80,7 +81,7 @@ export function Sidebar() {
                 }`}
               >
                 <Users className="mr-2 h-4 w-4" />
-                Guests
+                Users
               </Link>
             </Button>
           </SidebarMenuItem>
