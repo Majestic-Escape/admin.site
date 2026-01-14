@@ -613,7 +613,20 @@ export function ListingsTable() {
       },
       {
         accessorKey: "createdAt",
-        header: "Created At",
+
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="ghost"
+              onClick={() =>
+                column.toggleSorting(column.getIsSorted() === "asc")
+              }
+            >
+              Created At
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          );
+        },
         cell: ({ row }) => (
           <div className="text-center">
             {new Date(row.getValue("createdAt")).toLocaleDateString()}
@@ -643,6 +656,17 @@ export function ListingsTable() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem
+                  data-no-navigate="true"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/kyc-details/${listing.host._id}?firstName=${listing.host.firstName}&lastName=${listing.host.lastName}`
+                    )
+                  }
+                >
+                  Kyc Details
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  data-no-navigate="true"
                   onClick={() => {
                     navigator.clipboard.writeText(listing._id);
                     toast.success("Listing ID copied to clipboard");
@@ -651,6 +675,7 @@ export function ListingsTable() {
                   Copy listing ID
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  data-no-navigate="true"
                   onClick={() =>
                     router.push(
                       `/dashboard/view-property?property=${listing._id}`
@@ -662,12 +687,16 @@ export function ListingsTable() {
                 <DropdownMenuSeparator />
                 {listing.status != "active" ? (
                   <DropdownMenuItem
+                    data-no-navigate="true"
                     onClick={() => handleApproveListing(listing)}
                   >
                     Approve
                   </DropdownMenuItem>
                 ) : (
-                  <DropdownMenuItem onClick={() => handleDelisting(listing)}>
+                  <DropdownMenuItem
+                    data-no-navigate="true"
+                    onClick={() => handleDelisting(listing)}
+                  >
                     Delist
                   </DropdownMenuItem>
                 )}
@@ -735,14 +764,20 @@ export function ListingsTable() {
           </DialogFooter>
         </DialogContent>
       </Dialog> */}
-
+      {console.log("data", listingToApprove)}
       <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Approval</DialogTitle>
+            <DialogTitle>
+              {listingToApprove?.host?.kyc && listingToApprove?.host?.bank
+                ? "Confirm Approval"
+                : "Waiting fo host action"}
+            </DialogTitle>
             <DialogDescription>
-              Are you sure you want to approve the listing &quot;
-              {listingToApprove?.title}&quot;? This action cannot be undone.
+              {listingToApprove?.host?.kyc && listingToApprove?.host?.bank
+                ? `Are you sure you want to approve the listing &quot;
+              ${listingToApprove?.title}&quot;? This action cannot be undone.`
+                : `Bank details/Kyc form not completed by host.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -752,12 +787,14 @@ export function ListingsTable() {
             >
               Cancel
             </Button>
-            <Button
-              className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
-              onClick={bulk ? handleBulkApprove : handleConfirmApproveListing}
-            >
-              Confirm
-            </Button>
+            {listingToApprove?.host?.kyc && listingToApprove?.host?.bank ? (
+              <Button
+                className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                onClick={bulk ? handleBulkApprove : handleConfirmApproveListing}
+              >
+                Confirm
+              </Button>
+            ) : null}
           </DialogFooter>
         </DialogContent>
       </Dialog>
