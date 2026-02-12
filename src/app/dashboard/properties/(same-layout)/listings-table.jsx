@@ -109,7 +109,7 @@ const getFilteredListings = async (
   searchTerm,
   statusFilter,
   page = 1,
-  limit = 10
+  limit = 10,
 ) => {
   const getLocalData = await localStorage.getItem("token");
   const data = JSON.parse(getLocalData);
@@ -123,7 +123,7 @@ const getFilteredListings = async (
             Authorization: `Bearer ${data}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       const result = await response.data;
 
@@ -138,7 +138,7 @@ const getFilteredListings = async (
 
       // Handle other errors
       throw new Error(
-        error.response?.data?.message || "Failed to fetch listings"
+        error.response?.data?.message || "Failed to fetch listings",
       );
     }
   }
@@ -157,7 +157,7 @@ const approveListing = async (listingId) => {
             Authorization: `Bearer ${data}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       if (!response.status == 200) {
         throw new error("Something is wrong");
@@ -171,7 +171,7 @@ const approveListing = async (listingId) => {
     }
   } catch (error) {
     throw new Error(
-      error.response?.data?.message || "Failed to approve listing"
+      error.response?.data?.message || "Failed to approve listing",
     );
   }
 };
@@ -189,7 +189,7 @@ const deListing = async (listingId) => {
             Authorization: `Bearer ${data}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       if (!response.status == 200) {
         throw new error("Something is wrong");
@@ -199,7 +199,7 @@ const deListing = async (listingId) => {
     }
   } catch (error) {
     throw new Error(
-      error.response?.data?.message || "Failed to approve listing"
+      error.response?.data?.message || "Failed to approve listing",
     );
   }
 };
@@ -247,7 +247,7 @@ export function ListingsTable() {
         searchTerm,
         statusFilter,
         page,
-        10
+        10,
       ); // Pass the selected status filter
 
       setData(response.properties);
@@ -376,8 +376,8 @@ export function ListingsTable() {
               Authorization: `Bearer ${data}`,
               "Content-Type": "application/json",
             },
-          })
-        )
+          }),
+        ),
       );
       toast.success(`Approved ${selectedIds.length} listing(s)`);
       setApproveDialogOpen(false);
@@ -440,8 +440,8 @@ export function ListingsTable() {
               Authorization: `Bearer ${data}`,
               "Content-Type": "application/json",
             },
-          })
-        )
+          }),
+        ),
       );
       toast.success(`Delisted ${selectedIds.length} listing(s)`);
       setDelistDialogOpen(false);
@@ -659,7 +659,7 @@ export function ListingsTable() {
                   data-no-navigate="true"
                   onClick={() =>
                     router.push(
-                      `/dashboard/kyc-details/${listing.host._id}?firstName=${listing.host.firstName}&lastName=${listing.host.lastName}`
+                      `/dashboard/kyc-details/${listing.host._id}?firstName=${listing.host.firstName}&lastName=${listing.host.lastName}`,
                     )
                   }
                 >
@@ -676,9 +676,17 @@ export function ListingsTable() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   data-no-navigate="true"
+                  onClick={() => {
+                    router.push(`/dashboard/edit-property/${listing._id}`);
+                  }}
+                >
+                  Edit Property
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  data-no-navigate="true"
                   onClick={() =>
                     router.push(
-                      `/dashboard/view-property?property=${listing._id}`
+                      `/dashboard/view-property?property=${listing._id}`,
                     )
                   }
                 >
@@ -710,7 +718,7 @@ export function ListingsTable() {
         },
       },
     ],
-    [handleImageClick]
+    [handleImageClick],
   );
 
   const table = useReactTable({
@@ -956,7 +964,7 @@ export function ListingsTable() {
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -977,11 +985,11 @@ export function ListingsTable() {
                   onClick={(e) => {
                     // Check if the clicked element or its parent has data-no-navigate
                     const noNavigateElement = e.target.closest(
-                      '[data-no-navigate="true"]'
+                      '[data-no-navigate="true"]',
                     );
                     if (!noNavigateElement) {
                       router.push(
-                        `/dashboard/view-property?property=${row.original._id}`
+                        `/dashboard/view-property?property=${row.original._id}`,
                       );
                     }
                   }}
@@ -990,7 +998,7 @@ export function ListingsTable() {
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
