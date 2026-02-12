@@ -91,7 +91,7 @@ const EditPropertyPage = () => {
 
       toast.success(successMessage);
       setTimeout(() => {
-        setShowMembershipPopup(true);
+        // setShowMembershipPopup(true);
       }, 2000);
       setTimeout(() => {
         confetti({
