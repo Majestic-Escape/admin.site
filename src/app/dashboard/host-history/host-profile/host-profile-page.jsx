@@ -132,7 +132,7 @@ export default function HostProfilePage() {
               Authorization: `Bearer ${data}`,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
         if (response.status === 401) {
           // Token expired or missing
@@ -178,7 +178,7 @@ export default function HostProfilePage() {
               Authorization: `Bearer ${data}`,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
         if (response.status === 401) {
           // Token expired or missing
@@ -223,7 +223,7 @@ export default function HostProfilePage() {
   }
   const toggleBookingSelection = (id) => {
     setSelectedBookings((prev) =>
-      prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id],
     );
   };
   const renderUserProfile = (profile) => {
@@ -259,7 +259,7 @@ export default function HostProfilePage() {
         ?.trim()
         ?.split(" ")
         ?.map(
-          (item) => item.charAt(0).toUpperCase() + item.slice(1).toLowerCase()
+          (item) => item.charAt(0).toUpperCase() + item.slice(1).toLowerCase(),
         )
         ?.join(" ");
     };
@@ -588,7 +588,7 @@ export default function HostProfilePage() {
                     title={item?.address?.city + " " + item?.address?.state}
                   >
                     {checkLength(
-                      item?.address?.city + ", " + item?.address?.state
+                      item?.address?.city + ", " + item?.address?.state,
                     )}
                   </span>
                 </TableCell>
@@ -646,7 +646,7 @@ export default function HostProfilePage() {
       className={
         loading
           ? "h-screen space-y-4 p-8 pt-6 bg-gray-200 min-h-0"
-          : "md:h-screen lg:h-auto space-y-4 p-8 pt-6 bg-gray-200 min-h-0"
+          : "md:h-screen lg:h-auto space-y-4 px-8 pt-8 pb-24 md:p-8 md:pt-6 bg-gray-200 min-h-0"
       }
     >
       <div className="flex items-center justify-between space-y-2">
@@ -712,7 +712,7 @@ export default function HostProfilePage() {
                     .filter((item) =>
                       item?.label
                         ?.toLowerCase()
-                        ?.includes(propertyTypeSearch.toLowerCase())
+                        ?.includes(propertyTypeSearch.toLowerCase()),
                     )
                     ?.map((item) => (
                       <SelectItem value={item?.route}>{item?.label}</SelectItem>
@@ -745,7 +745,7 @@ export default function HostProfilePage() {
             onClick={() =>
               onGetExporProduct(
                 `${guestProfile?.firstName}_${guestProfile?.lastName}_Property_List`,
-                `Property_List`
+                `Property_List`,
               )
             }
           >

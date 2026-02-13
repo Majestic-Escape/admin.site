@@ -77,7 +77,7 @@ export default function GuestsPage() {
             Authorization: `Bearer ${data}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       )
         .then((response) => {
           if (!response.ok) {
@@ -117,14 +117,14 @@ export default function GuestsPage() {
                 Authorization: `Bearer ${data}`,
                 "Content-Type": "application/json",
               },
-            }
+            },
           );
           if (!result.ok) {
             throw new Error("Failed to delete guests ");
           }
 
           setGuests((prev) =>
-            prev.filter((guest) => guest._id != deleteGuestId)
+            prev.filter((guest) => guest._id != deleteGuestId),
           );
           toast.success("Successfully deleted the guest");
         } catch (err) {
@@ -168,8 +168,8 @@ export default function GuestsPage() {
                   ...guest,
                   status: { ...guest.status, active: !currentStatus },
                 }
-              : guest
-          )
+              : guest,
+          ),
         );
       } catch (err) {
         if (process.env.NEXT_PUBLIC_ENV === "dev") {
@@ -242,7 +242,7 @@ export default function GuestsPage() {
   if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className="flex-1 space-y-4 bg-gray-200 p-8 pt-6">
+    <div className="flex-1 space-y-4 bg-gray-200 px-8 pt-8 pb-24 md:p-8 md:pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-semibold tracking-tight font-bricolage">
           Guests
@@ -321,8 +321,8 @@ export default function GuestsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 flex items-center gap-4">
-                <div className="relative flex-1">
+              <div className="mb-4 md:flex items-center gap-4">
+                <div className="pb-4 md:pb-0 relative flex-1">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search guests"
@@ -331,52 +331,56 @@ export default function GuestsPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="ml-auto">
-                      <Filter className="mr-2 h-4 w-4" />
-                      Filter
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuCheckboxItem
-                      checked={selectedFilters.includes("highSpenders")}
-                      onCheckedChange={() => {
-                        setSelectedFilters((prev) =>
-                          prev.includes("highSpenders")
-                            ? prev.filter((item) => item !== "highSpenders")
-                            : [...prev, "highSpenders"]
-                        );
-                      }}
-                    >
-                      High Spenders
-                    </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem
-                      checked={selectedFilters.includes("frequentBookers")}
-                      onCheckedChange={() => {
-                        setSelectedFilters((prev) =>
-                          prev.includes("frequentBookers")
-                            ? prev.filter((item) => item !== "frequentBookers")
-                            : [...prev, "frequentBookers"]
-                        );
-                      }}
-                    >
-                      Frequent Bookers
-                    </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem
-                      checked={selectedFilters.includes("highRatings")}
-                      onCheckedChange={() => {
-                        setSelectedFilters((prev) =>
-                          prev.includes("highRatings")
-                            ? prev.filter((item) => item !== "highRatings")
-                            : [...prev, "highRatings"]
-                        );
-                      }}
-                    >
-                      High Ratings
-                    </DropdownMenuCheckboxItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="pb-4 md:pb-0">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="ml-auto w-full">
+                        <Filter className="mr-2 h-4 w-4" />
+                        Filter
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuCheckboxItem
+                        checked={selectedFilters.includes("highSpenders")}
+                        onCheckedChange={() => {
+                          setSelectedFilters((prev) =>
+                            prev.includes("highSpenders")
+                              ? prev.filter((item) => item !== "highSpenders")
+                              : [...prev, "highSpenders"],
+                          );
+                        }}
+                      >
+                        High Spenders
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={selectedFilters.includes("frequentBookers")}
+                        onCheckedChange={() => {
+                          setSelectedFilters((prev) =>
+                            prev.includes("frequentBookers")
+                              ? prev.filter(
+                                  (item) => item !== "frequentBookers",
+                                )
+                              : [...prev, "frequentBookers"],
+                          );
+                        }}
+                      >
+                        Frequent Bookers
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={selectedFilters.includes("highRatings")}
+                        onCheckedChange={() => {
+                          setSelectedFilters((prev) =>
+                            prev.includes("highRatings")
+                              ? prev.filter((item) => item !== "highRatings")
+                              : [...prev, "highRatings"],
+                          );
+                        }}
+                      >
+                        High Ratings
+                      </DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
                 <Select
                   value={rowsPerPage.toString()}
                   onValueChange={(value) => {
@@ -384,7 +388,7 @@ export default function GuestsPage() {
                     setSkip(Number(0));
                   }}
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-full  md:w-[180px]">
                     <SelectValue placeholder="Rows per page" />
                   </SelectTrigger>
                   <SelectContent>
@@ -467,7 +471,7 @@ export default function GuestsPage() {
                               className="mr-2 bg-white text-yellow-500 border border-yellow-500"
                               onClick={() =>
                                 router.push(
-                                  `/dashboard/kyc-details/${guest._id}?firstName=${guest.firstName}&lastName=${guest.lastName}`
+                                  `/dashboard/kyc-details/${guest._id}?firstName=${guest.firstName}&lastName=${guest.lastName}`,
                                 )
                               }
                             >

@@ -72,7 +72,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="flex flex-col flex-1 bg-gray-200 overflow-hidden">
+    <div className="flex flex-col flex-1 bg-gray-200 overflow-hidden pb-8 md:pb-0">
       <main className="flex-1 overflow-y-auto pb-10">
         <div className="flex-1 space-y-6 p-8 pt-6">
           {/* Page header */}

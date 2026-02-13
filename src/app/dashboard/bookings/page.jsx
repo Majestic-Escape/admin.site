@@ -31,7 +31,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { properties } from "../../../utils/property-type";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsListAdmin,
+  TabsTriggerAdmin,
+} from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -151,7 +156,7 @@ export default function BookingsPage() {
               Authorization: `Bearer ${data}`,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
         if (response.status === 401) {
           // Token expired or missing
@@ -234,7 +239,7 @@ export default function BookingsPage() {
               Authorization: `Bearer ${data}`,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
         const result = await response.json();
         if (process.env.NEXT_PUBLIC_ENV === "dev") {
@@ -372,7 +377,7 @@ export default function BookingsPage() {
 
   const toggleBookingSelection = (id) => {
     setSelectedBookings((prev) =>
-      prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id],
     );
   };
 
@@ -561,7 +566,9 @@ export default function BookingsPage() {
                     }
                   >
                     {checkLength(
-                      booking.userId.firstName + " " + booking?.userId?.lastName
+                      booking.userId.firstName +
+                        " " +
+                        booking?.userId?.lastName,
                     )}
                   </span>
                 </TableCell>
@@ -591,7 +598,7 @@ export default function BookingsPage() {
                       <DropdownMenuItem
                         onClick={() =>
                           router.push(
-                            `/dashboard/booking-details?booking=${booking._id}`
+                            `/dashboard/booking-details?booking=${booking._id}`,
                           )
                         }
                       >
@@ -764,7 +771,7 @@ export default function BookingsPage() {
   const arrayCheckoutDate = date?.to && exportCheckoutDate.split("/");
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6 bg-gray-200 min-h-screen">
+    <div className="flex-1 space-y-4 px-8 pt-8 pb-24 md:p-8 md:pt-6 bg-gray-200 min-h-screen">
       {modifyDialogOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
@@ -809,7 +816,7 @@ export default function BookingsPage() {
                         .filter((item) =>
                           item?.title
                             ?.toLowerCase()
-                            ?.includes(propertyTypeSearch.toLowerCase())
+                            ?.includes(propertyTypeSearch.toLowerCase()),
                         )
                         .map((item) => (
                           <SelectItem value={item?._id}>
@@ -939,16 +946,16 @@ export default function BookingsPage() {
           </div>
         </div>
       )}
-      <div className="flex items-center justify-between space-y-2">
+      <div className="md:flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-semibold font-bricolage tracking-tight">
           Bookings
         </h2>
-        <div className="flex items-center space-x-2">
+        <div className="md:flex items-center md:space-x-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant={"outline"}
-                className={`w-[280px] justify-start text-left font-normal ${
+                className={`w-full md:w-[280px] justify-start text-left font-normal ${
                   !date && "text-muted-foreground"
                 }`}
               >
@@ -997,14 +1004,14 @@ export default function BookingsPage() {
             </PopoverContent>
           </Popover>
           <Button
-            className="bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
+            className="mt-4 md:mt-0 w-full bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
             onClick={() => {
               if (!date?.from || !date?.to) {
                 toast.error("Select both dates on calendar before export");
               } else {
                 onGetExporProduct(
                   `All_Booking_${arrayCheckinDate[0]}${arrayCheckinDate[1]}${arrayCheckinDate[2]}_${arrayCheckoutDate[0]}${arrayCheckoutDate[1]}${arrayCheckoutDate[2]}`,
-                  "All_BookingExport"
+                  "All_BookingExport",
                 );
               }
             }}
@@ -1054,13 +1061,13 @@ export default function BookingsPage() {
         className="space-y-4"
         onValueChange={setActiveTab}
       >
-        <TabsList>
-          <TabsTrigger value="all">All Bookings</TabsTrigger>
-          <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-        </TabsList>
+        <TabsListAdmin className="flex flex-col md:flex-row">
+          <TabsTriggerAdmin value="all">All</TabsTriggerAdmin>
+          <TabsTriggerAdmin value="confirmed">Confirmed</TabsTriggerAdmin>
+          <TabsTriggerAdmin value="pending">Pending</TabsTriggerAdmin>
+          <TabsTriggerAdmin value="rejected">Rejected</TabsTriggerAdmin>
+          <TabsTriggerAdmin value="cancelled">Cancelled</TabsTriggerAdmin>
+        </TabsListAdmin>
         {/* <div className="flex items-center space-x-2">
           <div className="flex-1">
             <div className="relative">
