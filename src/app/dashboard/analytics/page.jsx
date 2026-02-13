@@ -188,7 +188,7 @@ const AnalyticsPage = () => {
               Authorization: `Bearer ${data}`,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
         const result = await response.json();
         const final = await result.data;
@@ -293,12 +293,12 @@ const AnalyticsPage = () => {
     const utc1 = Date.UTC(
       date1.getFullYear(),
       date1.getMonth(),
-      date1.getDate()
+      date1.getDate(),
     );
     const utc2 = Date.UTC(
       date2.getFullYear(),
       date2.getMonth(),
-      date2.getDate()
+      date2.getDate(),
     );
     return Math.floor(Math.abs(utc2 - utc1) / (1000 * 60 * 60 * 24));
   }
@@ -315,7 +315,7 @@ const AnalyticsPage = () => {
       const final = bookings?.filter(
         (item) =>
           new Date(item?.checkIn).toLocaleDateString() ==
-          date.toLocaleDateString()
+          date.toLocaleDateString(),
       );
       let sum = 0;
       let sumBook = 0;
@@ -371,9 +371,9 @@ const AnalyticsPage = () => {
       const final = bookings?.filter(
         (item) =>
           `${new Date(item?.checkIn).getMonth()}/${new Date(
-            item?.checkIn
+            item?.checkIn,
           ).getFullYear()}` ==
-          `${new Date(newDate).getMonth()}/${new Date(newDate).getFullYear()}`
+          `${new Date(newDate).getMonth()}/${new Date(newDate).getFullYear()}`,
       );
 
       let sum = 0;
@@ -411,7 +411,7 @@ const AnalyticsPage = () => {
     const data = arr.map((propTitle, i) => {
       const final = bookings?.filter(
         (item) =>
-          item?.propertyId?.title?.toLowerCase() === propTitle.toLowerCase()
+          item?.propertyId?.title?.toLowerCase() === propTitle.toLowerCase(),
       );
       let sum = 0;
       let sumBook = 0;
@@ -436,7 +436,7 @@ const AnalyticsPage = () => {
   }, [propertyPieData]);
   const emails = [];
   return (
-    <div className="container mx-auto  py-10 px-8 min-h-screen bg-gray-200">
+    <div className="container mx-auto  pt-10 pb-24 md:py-10 px-8 min-h-screen bg-gray-200 ">
       <div className="flex justify-between">
         <div className="pb-5">
           <h1 className="text-2xl font-semibold font-bricolage text-absoluteDark mb-2">
@@ -449,14 +449,14 @@ const AnalyticsPage = () => {
         </div>
         <Button className="text-white bg-primaryGreen hover:bg-brightGreen rounded-3xl">
           <Download className="mr-2 h-4 w-4" />
-          Export Analytics Report
+          Export Report
         </Button>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
+      <div className="flex flex-col md:flex-row justify-between md:items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
         <div className="flex flex-col pb-5 md:flex-row space-y-4 md:space-y-0 md:space-x-4">
           <Select onValueChange={handleDateRangeChange}>
-            <SelectTrigger className="w-[180px] bg-white">
+            <SelectTrigger className="w-full md:w-[180px] bg-white">
               <SelectValue placeholder="Select time period" />
             </SelectTrigger>
             <SelectContent>
@@ -480,7 +480,7 @@ const AnalyticsPage = () => {
             <PopoverTrigger asChild>
               <Button
                 variant={"outline"}
-                className={`w-[280px] justify-start text-left font-normal ${
+                className={`w-full md:w-[280px] justify-start text-left font-normal ${
                   !dateRange && "text-muted-foreground"
                 }`}
               >
@@ -512,7 +512,7 @@ const AnalyticsPage = () => {
           </Popover>
 
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-[180px] bg-white">
+            <SelectTrigger className="w-full md:w-[180px] bg-white">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -526,7 +526,7 @@ const AnalyticsPage = () => {
           </Select>
 
           <Select value={currentHost} onValueChange={setCurrentHost}>
-            <SelectTrigger className="w-[200px] bg-white">
+            <SelectTrigger className="w-full md:w-[200px] bg-white">
               <SelectValue placeholder="Select Property" />
             </SelectTrigger>
             <SelectContent>
@@ -549,7 +549,7 @@ const AnalyticsPage = () => {
                 ?.filter((item) =>
                   item.hostEmail
                     ?.toLowerCase()
-                    .includes(hostSearch.toLowerCase())
+                    .includes(hostSearch.toLowerCase()),
                 )
                 .map((item) => {
                   if (!emails.includes(item.hostEmail)) {
@@ -669,7 +669,7 @@ const AnalyticsPage = () => {
                 data={
                   getDaysBetweenTwoDates(
                     new Date(dateRange.from),
-                    new Date(dateRange.to)
+                    new Date(dateRange.to),
                   ) <= 31
                     ? daysBar()
                     : monthsBar()
@@ -679,12 +679,12 @@ const AnalyticsPage = () => {
                   dataKey={
                     getDaysBetweenTwoDates(
                       new Date(dateRange.from),
-                      new Date(dateRange.to)
+                      new Date(dateRange.to),
                     ) <= 7
                       ? "day"
                       : getDaysBetweenTwoDates(
                             new Date(dateRange.from),
-                            new Date(dateRange.to)
+                            new Date(dateRange.to),
                           ) <= 31
                         ? "short"
                         : "month"
@@ -743,7 +743,7 @@ const AnalyticsPage = () => {
                 data={
                   getDaysBetweenTwoDates(
                     new Date(dateRange.from),
-                    new Date(dateRange.to)
+                    new Date(dateRange.to),
                   ) <= 31
                     ? daysBar()
                     : monthsBar()
@@ -753,12 +753,12 @@ const AnalyticsPage = () => {
                   dataKey={
                     getDaysBetweenTwoDates(
                       new Date(dateRange.from),
-                      new Date(dateRange.to)
+                      new Date(dateRange.to),
                     ) <= 7
                       ? "day"
                       : getDaysBetweenTwoDates(
                             new Date(dateRange.from),
-                            new Date(dateRange.to)
+                            new Date(dateRange.to),
                           ) <= 31
                         ? "short"
                         : "month"

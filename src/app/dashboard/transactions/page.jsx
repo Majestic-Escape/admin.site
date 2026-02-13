@@ -26,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsListAdmin, TabsTriggerAdmin } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -101,7 +101,7 @@ export default function TransactionsPage() {
               Authorization: `Bearer ${data}`,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
         if (response.status === 401) {
           // Token expired or missing
@@ -187,15 +187,15 @@ export default function TransactionsPage() {
   );
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
+    <div className="flex-1 space-y-4 px-8 pt-8 pb-24 md:p-8 md:pt-6">
+      <div className="md:flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Transactions</h2>
-        <div className="flex items-center space-x-2">
+        <div className="md:flex items-center md:space-x-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant={"outline"}
-                className={`w-[280px] justify-start text-left font-normal ${!date && "text-muted-foreground"}`}
+                className={`w-full md:w-[280px] justify-start text-left font-normal ${!date && "text-muted-foreground"}`}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {date?.from ? (
@@ -223,7 +223,7 @@ export default function TransactionsPage() {
               />
             </PopoverContent>
           </Popover>
-          <Button>
+          <Button className="mt-4 w-full md:mt-0 ">
             <Download className="mr-2 h-4 w-4" />
             Export CSV
           </Button>
@@ -234,12 +234,12 @@ export default function TransactionsPage() {
         className="space-y-4"
         onValueChange={setTransactionType}
       >
-        <TabsList>
-          <TabsTrigger value="all">All Transactions</TabsTrigger>
-          <TabsTrigger value="pay-in">Pay-ins</TabsTrigger>
-          <TabsTrigger value="pay-out">Payouts</TabsTrigger>
-          <TabsTrigger value="refunded">Refunds</TabsTrigger>
-        </TabsList>
+        <TabsListAdmin className="flex flex-col md:flex-row">
+          <TabsTriggerAdmin value="all">All Transactions</TabsTriggerAdmin>
+          <TabsTriggerAdmin value="pay-in">Pay-ins</TabsTriggerAdmin>
+          <TabsTriggerAdmin value="pay-out">Payouts</TabsTriggerAdmin>
+          <TabsTriggerAdmin value="refunded">Refunds</TabsTriggerAdmin>
+        </TabsListAdmin>
         <div className="flex items-center space-x-2">
           <div className="flex-1">
             <div className="relative">

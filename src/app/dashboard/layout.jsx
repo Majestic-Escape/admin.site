@@ -4,6 +4,7 @@ import * as React from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -18,6 +19,7 @@ import { Bell, Search, Settings, HelpCircle, LogOut } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { useEffect } from "react";
+import AdminBottomNavigation from "@/components/bottom-navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
 import { useRouter } from "next/navigation";
@@ -68,17 +70,26 @@ export default function DashboardLayout({ children }) {
       <div className="flex min-h-screen overflow-hidden w-screen">
         <Sidebar />
         <div className="flex flex-col flex-1 overflow-hidden w-full">
-          <header className="flex h-14 lg:h-[60px] w-full items-center gap-4 border-b bg-muted/40 px-6">
+          <header className=" md:hidden flex h-14 lg:h-[60px] w-full items-center gap-4 border-b bg-muted/40 px-6">
+            {" "}
+            <Image
+              src="/logo.svg"
+              width={100}
+              height={100}
+              className="h-9 w-9"
+            />
+          </header>
+          <header className="hidden md:block flex h-14 lg:h-[60px] w-full items-center gap-4 border-b bg-muted/40 px-6 py-2">
             <div className="flex flex-1 items-center justify-end gap-4 md:ml-auto md:gap-2 lg:gap-4">
               <form className="flex-1 sm:flex-initial">
-                <div className="relative">
+                {/* <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="search"
                     placeholder="Search..."
                     className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
                   />
-                </div>
+                </div> */}
               </form>
               <Button size="icon" variant="ghost">
                 <Bell className="h-4 w-4" />
@@ -133,6 +144,10 @@ export default function DashboardLayout({ children }) {
             </div>
           </header>
           <main className="flex-1 overflow-y-auto">{children}</main>
+          <bottom>
+            {" "}
+            <AdminBottomNavigation />
+          </bottom>
         </div>
       </div>
     </SidebarProvider>

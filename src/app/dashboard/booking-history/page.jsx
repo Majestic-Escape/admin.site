@@ -140,7 +140,7 @@ export default function BookingsPage() {
               Authorization: `Bearer ${data}`,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
 
         const result = await response.json();
@@ -313,7 +313,7 @@ export default function BookingsPage() {
                     }
                     onClick={() =>
                       router.push(
-                        `/dashboard/booking-history/user-profile?userId=${booking.userId._id}`
+                        `/dashboard/booking-history/user-profile?userId=${booking.userId._id}`,
                       )
                     }
                     className="underline cursor-pointer"
@@ -321,7 +321,7 @@ export default function BookingsPage() {
                     {checkLength(
                       booking.userId?.firstName +
                         " " +
-                        booking?.userId?.lastName
+                        booking?.userId?.lastName,
                     )}
                   </span>
                 </TableCell>
@@ -426,7 +426,7 @@ export default function BookingsPage() {
       className={
         loading
           ? "flex-1 h-screen space-y-4 p-8 pt-6 bg-gray-200 min-h-screen"
-          : "flex-1 space-y-4 p-8 pt-6 bg-gray-200 min-h-screen"
+          : "flex-1 space-y-4 px-8 pt-8 pb-24 md:p-8 md:pt-6 bg-gray-200 min-h-screen"
       }
     >
       <div className="lg:flex items-center justify-between space-y-2">
@@ -495,7 +495,7 @@ export default function BookingsPage() {
               } else {
                 onGetExporProduct(
                   `Guest_Booking_History_${arrayCheckinDate[0]}${arrayCheckinDate[1]}${arrayCheckinDate[2]}_${arrayCheckoutDate[0]}${arrayCheckoutDate[1]}${arrayCheckoutDate[2]}`,
-                  "GuestBookingHistoryExport"
+                  "GuestBookingHistoryExport",
                 );
               }
             }}
@@ -564,7 +564,7 @@ export default function BookingsPage() {
                   ?.filter((item) =>
                     item?.hostEmail
                       ?.toLowerCase()
-                      .includes(hostSearch?.toLowerCase())
+                      .includes(hostSearch?.toLowerCase()),
                   )
                   ?.map((item) => (
                     <SelectItem value={item?.host}>

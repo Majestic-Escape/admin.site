@@ -745,7 +745,7 @@ export function ListingsTable() {
   }, []);
 
   return (
-    <div className="w-full">
+    <div className="w-full pb-24 md:pb-0">
       {/* DIALOG FOR DELETING LISTING */}
       {/* <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
@@ -844,19 +844,31 @@ export function ListingsTable() {
       {/* ----------- STATS CARDS ----------- */}
       <div className="grid grid-cols-4 gap-4 mb-4">
         <div className="p-4 bg-white rounded shadow text-center">
-          <div className="text-sm font-medium">Total Listings</div>
+          <div className="md:hidden text-sm font-medium">Total</div>
+          <div className="hidden md:block text-sm font-medium">
+            Total Listings
+          </div>
           <div className="text-xl font-bold">{totalListings}</div>
         </div>
         <div className="p-4 bg-white rounded shadow text-center">
-          <div className="text-sm font-medium">Active Listings</div>
+          <div className="md:hidden text-sm font-medium">Active</div>
+          <div className="hidden md:block text-sm font-medium">
+            Active Listings
+          </div>
           <div className="text-xl font-bold">{totalActiveListings}</div>
         </div>
         <div className="p-4 bg-white rounded shadow text-center">
-          <div className="text-sm font-medium">Pending Listings</div>
+          <div className="md:hidden text-sm font-medium">Pend.</div>
+          <div className="hidden md:block text-sm font-medium">
+            Pending Listings
+          </div>
           <div className="text-xl font-bold">{totalPendingListings}</div>
         </div>
         <div className="p-4 bg-white rounded shadow text-center">
-          <div className="text-sm font-medium">Listings Today</div>
+          <div className="md:hidden text-sm font-medium">Today</div>
+          <div className="hidden md:block text-sm font-medium">
+            Listings Today
+          </div>
           <div className="text-xl font-bold">{listingsToday}</div>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -143,7 +144,7 @@ const ReviewsPage = () => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${data}`,
             },
-          }
+          },
         );
 
         if (!response.ok) {
@@ -220,7 +221,7 @@ const ReviewsPage = () => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${data}`,
             },
-          }
+          },
         );
 
         if (!response.ok) {
@@ -250,7 +251,7 @@ const ReviewsPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto px-6 pt-6 pb-24 md:p-6 space-y-6">
       <Dialog
         open={dialogOpen}
         onOpenChange={() => {
@@ -384,7 +385,7 @@ const ReviewsPage = () => {
                     variant={"outline"}
                     className={cn(
                       " justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
+                      !date && "text-muted-foreground",
                     )}
                   >
                     {date?.from ? (
@@ -484,13 +485,13 @@ const ReviewsPage = () => {
                     }
                   >
                     <div className="flex items-center">
-                      <img
+                      <Image
                         src={review.userAvatar}
                         alt={review.userName}
                         className="w-8 h-8 rounded-full mr-2"
                       />
                       {checkLength(
-                        review?.user?.firstName + " " + review?.user?.lastName
+                        review?.user?.firstName + " " + review?.user?.lastName,
                       )}
                     </div>
                   </TableCell>
@@ -521,7 +522,7 @@ const ReviewsPage = () => {
                         <DropdownMenuItem
                           onClick={() =>
                             router.push(
-                              `/dashboard/booking-history/user-profile?userId=${review?.user?._id}`
+                              `/dashboard/booking-history/user-profile?userId=${review?.user?._id}`,
                             )
                           }
                         >
