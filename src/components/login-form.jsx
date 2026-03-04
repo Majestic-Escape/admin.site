@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
-
+import Image from "next/image";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const loginSchema = z.object({

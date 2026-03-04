@@ -48,7 +48,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface Photo {
   id: string;
@@ -159,6 +159,7 @@ export function Images({ updateFormData, formData }: MakeItStandOutProps) {
     });
 
     try {
+      console.log("Formdat", formData);
       console.log("Making backend call");
       const res = await axios.post(`${API_BASE_URL}/uploads/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },

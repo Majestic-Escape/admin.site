@@ -145,7 +145,7 @@ export default function BookingsPage() {
               Authorization: `Bearer ${data}`,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
         if (response.status === 401) {
           // Token expired or missing
@@ -322,7 +322,7 @@ export default function BookingsPage() {
                       title={item?.firstName + " " + item?.lastName}
                       onClick={() => {
                         router.push(
-                          `/dashboard/host-history/host-profile?hostId=${item?._id}`
+                          `/dashboard/host-history/host-profile?hostId=${item?._id}`,
                         );
                       }}
                       className="underline cursor-pointer"
@@ -506,7 +506,7 @@ export default function BookingsPage() {
       className={
         loading
           ? "flex-1 h-screen space-y-4 p-8 pt-6 bg-gray-200 min-h-screen"
-          : "flex-1 space-y-4 p-8 pt-6 bg-gray-200 min-h-screen"
+          : "flex-1 space-y-4 px-8 pt-8 pb-24 md:p-8 md:pt-6 bg-gray-200 min-h-screen"
       }
     >
       <div className="lg:flex items-center justify-between space-y-2">
@@ -553,7 +553,7 @@ export default function BookingsPage() {
             onClick={() =>
               onGetExporProduct(
                 `Host_History_${arrayCheckinDate[0]}${arrayCheckinDate[1]}${arrayCheckinDate[2]}_${arrayCheckoutDate[0]}${arrayCheckoutDate[1]}${arrayCheckoutDate[2]}`,
-                "HostHistoryExport"
+                "HostHistoryExport",
               )
             }
           >
@@ -619,7 +619,7 @@ export default function BookingsPage() {
                 </SelectItem>
                 {hostEmail
                   ?.filter((item) =>
-                    item?.toLowerCase().includes(hostSearch?.toLowerCase())
+                    item?.toLowerCase().includes(hostSearch?.toLowerCase()),
                   )
                   .map((item) => (
                     <SelectItem value={item}>{item}</SelectItem>
