@@ -23,6 +23,7 @@ import {
   DollarSign,
   BarChart2,
   MessageSquare,
+  Headset,
   Settings,
   HelpCircle,
 } from "lucide-react";
@@ -197,6 +198,22 @@ export function Sidebar() {
               >
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Reviews
+              </Link>
+            </Button>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link
+                href="/dashboard/support-chat"
+                className={`flex items-center w-full ${
+                  isActive("/dashboard/support-chat")
+                    ? activeClass
+                    : "text-muted-foreground"
+                }`}
+              >
+                <Headset className="mr-2 h-4 w-4" />
+                Support Chat
               </Link>
             </Button>
           </SidebarMenuItem>
