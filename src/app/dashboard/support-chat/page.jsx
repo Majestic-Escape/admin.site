@@ -79,12 +79,27 @@ export default function SupportChatPage() {
     const sock = io(`${SUPPORT_URL}/support`, {
       auth: { token },
       transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
     socketRef.current = sock;
 
     sock.on("connect", () => {
       setIsConnected(true);
       setAuthError(null);
+      // On a RECONNECT the server places this fresh socket only in
+      // ADMINS_ROOM — not back in the open conversation's room. Without
+      // rejoining, live messages for the currently-open thread silently
+      // stop arriving until the admin clicks away and back. Re-emitting
+      // assign rejoins the room (a silent no-op when still assigned to us);
+      // fetch-history backfills anything missed while disconnected.
+      const openId = activeIdRef.current;
+      if (openId) {
+        sock.emit("support:fetch-history", { conversationId: openId }, () => {});
+        sock.emit("support:assign", { conversationId: openId }, () => {});
+      }
     });
     sock.on("disconnect", () => setIsConnected(false));
     sock.on("connect_error", (err) => {
@@ -196,7 +211,18 @@ export default function SupportChatPage() {
       setMessages(payload.messages || []);
     });
 
+    // Force an immediate reconnect when a backgrounded tab is refocused, so
+    // the reply input doesn't sit disabled waiting out the backoff after an
+    // idle period.
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && !sock.connected) {
+        sock.connect();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
+      document.removeEventListener("visibilitychange", onVisible);
       sock.disconnect();
       socketRef.current = null;
     };
