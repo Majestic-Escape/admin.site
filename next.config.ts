@@ -28,6 +28,17 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  async rewrites() {
+    const backendUrl =
+      process.env.BACKEND_URL || "http://localhost:5005/api/v1";
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: `${backendUrl}/:path*`,
+      },
+    ];
+  },
+
   /* config options here */
   eslint: {
     // Ignore ESLint errors during production build
