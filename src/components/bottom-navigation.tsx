@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   Calendar,
@@ -23,6 +22,8 @@ import {
   StarIcon,
   Book,
   Contact,
+  Headset,
+  Settings,
 } from "lucide-react";
 import {
   Sheet,
@@ -33,7 +34,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 const navItems = [
   { name: "Home", icon: LayoutDashboard, href: "/dashboard" },
   { name: "Property", icon: Building2, href: "/dashboard/properties" },
@@ -43,7 +44,13 @@ const navItems = [
 //MessageCircle
 export default function AdminBottomNavigation() {
   const { logout } = useAuth();
-  const [active, setActive] = useState("Dashboard");
+  // Derived from the URL rather than click state. The previous local `useState`
+  // was seeded with "Dashboard", which matches none of the navItems names, so
+  // the active highlight never rendered on load and was lost on every refresh
+  // or back-navigation. Matches the isActive() helper in sidebar.tsx.
+  const pathname = usePathname();
+  const isActive = (href: string) =>
+    href === "/dashboard" ? pathname === href : pathname.startsWith(href);
 
   const router = useRouter();
   const handleLogout = () => {
@@ -60,9 +67,9 @@ export default function AdminBottomNavigation() {
             <Link
               href={item.href}
               className={`flex flex-col items-center p-2 rounded-lg transition-colors duration-200 ${
-                active === item.name ? "text-primary" : "text-muted-foreground"
+                isActive(item.href) ? "text-primary" : "text-muted-foreground"
               } hover:text-primary hover:bg-accent`}
-              onClick={() => setActive(item.name)}
+              aria-current={isActive(item.href) ? "page" : undefined}
             >
               <item.icon className="w-5 h-5 mb-1" />
               <span className="text-xs font-medium">{item.name}</span>
@@ -141,6 +148,24 @@ export default function AdminBottomNavigation() {
                 >
                   <Star className="w-4 h-4" />
                   <span>Reviews</span>
+                </Link>
+                {/* Support Chat and Settings live in the desktop sidebar. Below
+                    `md` that sidebar can only be reached via the header's
+                    SidebarTrigger, so without these entries the two pages were
+                    effectively unreachable on a phone. */}
+                <Link
+                  href="/dashboard/support-chat"
+                  className="flex items-center space-x-2 text-sm"
+                >
+                  <Headset className="w-4 h-4" />
+                  <span>Support Chat</span>
+                </Link>
+                <Link
+                  href="/dashboard/settings"
+                  className="flex items-center space-x-2 text-sm"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
                 </Link>
                 <Button
                   onClick={handleLogout}
