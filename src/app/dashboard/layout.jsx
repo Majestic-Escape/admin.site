@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import * as React from "react";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -70,13 +70,18 @@ export default function DashboardLayout({ children }) {
       <div className="flex min-h-screen overflow-hidden w-screen">
         <Sidebar />
         <div className="flex flex-col flex-1 overflow-hidden w-full">
-          <header className=" md:hidden flex h-14 lg:h-[60px] w-full items-center gap-4 border-b bg-muted/40 px-6">
-            {" "}
+          {/* Mobile header. The SidebarTrigger is load-bearing: below `md` the
+              shadcn sidebar renders as a Sheet that has no other way to open,
+              so without a trigger every sidebar-only page (Support Chat,
+              Settings, Users, Properties…) was unreachable on a phone. */}
+          <header className=" md:hidden flex h-14 lg:h-[60px] w-full items-center gap-3 border-b bg-muted/40 px-4">
+            <SidebarTrigger className="-ml-1" />
             <Image
               src="/logo.svg"
               width={100}
               height={100}
               className="h-9 w-9"
+              alt="Majestic Escape"
             />
           </header>
           <header className="hidden md:block flex h-14 lg:h-[60px] w-full items-center gap-4 border-b bg-muted/40 px-6 py-2">
@@ -144,10 +149,13 @@ export default function DashboardLayout({ children }) {
             </div>
           </header>
           <main className="flex-1 overflow-y-auto">{children}</main>
-          <bottom>
-            {" "}
+          {/* Was a literal <bottom> element — not valid HTML, so React logged
+              "The tag <bottom> is unrecognized in this browser" on every admin
+              page load. The nav inside is `fixed bottom-0`, so the wrapper's
+              display has no layout effect. */}
+          <div>
             <AdminBottomNavigation />
-          </bottom>
+          </div>
         </div>
       </div>
     </SidebarProvider>

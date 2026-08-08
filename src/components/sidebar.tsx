@@ -249,20 +249,22 @@ export function Sidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-          {/* <SidebarMenuItem>
+          <SidebarMenuItem>
             <Button variant="ghost" className="w-full justify-start" asChild>
               <Link
                 href="/dashboard/settings"
-                className={
-                  pathname === "/dashboard/settings" ? "text-primary" : ""
-                }
+                className={`flex items-center w-full ${
+                  isActive("/dashboard/settings")
+                    ? activeClass
+                    : "text-muted-foreground"
+                }`}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </Link>
             </Button>
           </SidebarMenuItem>
-          <SidebarMenuItem>
+          {/* <SidebarMenuItem>
             <Button variant="ghost" className="w-full justify-start" asChild>
               <Link
                 href="/dashboard/help"
