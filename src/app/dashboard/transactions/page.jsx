@@ -176,7 +176,7 @@ export default function TransactionsPage() {
                 {transaction?.status}
               </Badge>
             </TableCell>
-            <TableCell>{transaction?.createdAt.split("T")[0]}</TableCell>
+            <TableCell>{transaction?.createdAt?.split("T")[0] ?? "—"}</TableCell>
             <TableCell>{transaction?.customerDetails?.name}</TableCell>
             <TableCell>{transaction?.propertyId?.title}</TableCell>
             <TableCell>{transaction?.paymentMethod}</TableCell>

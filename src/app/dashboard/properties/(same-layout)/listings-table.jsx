@@ -130,9 +130,10 @@ const getFilteredListings = async (
       return result;
     } catch (error) {
       if (error.response?.status === 401) {
+        // `router` isn't in scope in this module-level helper (it used to throw
+        // a ReferenceError here); the caller redirects on this message.
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
-        router.push("/"); // redirect to login
         throw new Error("Session expired. Please login again.");
       }
 
@@ -250,14 +251,15 @@ export function ListingsTable() {
         10,
       ); // Pass the selected status filter
 
-      setData(response.properties);
-      setTotalListings(response.totalList);
+      setData(Array.isArray(response?.properties) ? response.properties : []);
+      setTotalListings(response?.totalList ?? 0);
       setTotalActiveListings(response.totalActiveListings);
       setTotalPendingListings(response.totalProcessingListings);
       // setListingsToday(response.listingsToday);
     } catch (error) {
       console.error("Failed to fetch filtered listings:", error);
       toast.error(error.message);
+      if (/Session expired/.test(error?.message || "")) router.push("/");
     } finally {
       setLoading(false);
     }
