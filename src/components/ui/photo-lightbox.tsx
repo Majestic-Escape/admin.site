@@ -56,6 +56,9 @@ function prefersReducedMotion() {
   );
 }
 
+// Marker stored in history.state for the entry the open lightbox owns.
+const HISTORY_MARKER = "meLightbox";
+
 export default function PhotoLightbox({
   images,
   open,
@@ -64,6 +67,50 @@ export default function PhotoLightbox({
   title,
 }: PhotoLightboxProps) {
   const count = images.length;
+  const onOpenChangeRef = React.useRef(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
+
+  // Give the open lightbox its own history entry so the browser / OS Back
+  // button closes the gallery instead of leaving the listing (a full-screen
+  // viewer reads as a "page" to users, especially on phones). Closing via X
+  // or Escape pops that entry again, so Back afterwards still goes where it
+  // did before. Next's App Router patches pushState to carry its own state,
+  // so a same-URL push is a no-op for routing.
+  React.useEffect(() => {
+    if (!open || count === 0 || typeof window === "undefined") return;
+    const hrefAtOpen = window.location.href;
+    let ownsEntry = true;
+    try {
+      window.history.pushState(
+        { ...(window.history.state ?? {}), [HISTORY_MARKER]: true },
+        "",
+      );
+    } catch {
+      ownsEntry = false;
+    }
+    const onPopState = (event: PopStateEvent) => {
+      // Back from our entry lands on the previous state (no marker) → close.
+      // Forward back onto our entry (marker present) is ignored.
+      if (event.state?.[HISTORY_MARKER]) return;
+      ownsEntry = false;
+      onOpenChangeRef.current(false);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+      // Closed by X / Escape / programmatically while our entry is still on
+      // top: pop it so we don't leave a phantom entry. Skip if the URL
+      // changed underneath us (a route change unmounted the lightbox).
+      if (
+        ownsEntry &&
+        window.location.href === hrefAtOpen &&
+        window.history.state?.[HISTORY_MARKER]
+      ) {
+        window.history.back();
+      }
+    };
+  }, [open, count]);
+
   // Nothing to show → never open (an empty black dialog is worse than none).
   if (count === 0) return null;
 
