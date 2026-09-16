@@ -13,13 +13,22 @@
 
 const MINUTE = 60 * 1000;
 
+// One retry for transient failures (5xx, network); a 4xx is a definite
+// answer (missing, forbidden, malformed) and retrying it only doubles the
+// backend load for the same result.
+const retryOnceUnlessClientError = (failureCount: number, error: unknown) => {
+  const status = (error as { status?: number } | null)?.status;
+  if (typeof status === "number" && status >= 400 && status < 500) return false;
+  return failureCount < 1;
+};
+
 // Public catalogue data (home feed, listing, reviews, search): fresh for
 // 5 min, kept for 30, no refetch on tab focus.
 export const PUBLIC = {
   staleTime: 5 * MINUTE,
   gcTime: 30 * MINUTE,
   refetchOnWindowFocus: false,
-  retry: 1,
+  retry: retryOnceUnlessClientError,
 } as const;
 
 // Slow-changing aggregates (destination counts).
@@ -27,7 +36,7 @@ export const PUBLIC_LONG = {
   staleTime: 30 * MINUTE,
   gcTime: 60 * MINUTE,
   refetchOnWindowFocus: false,
-  retry: 1,
+  retry: retryOnceUnlessClientError,
 } as const;
 
 // Per-user data (bookings, account, host listings): fresh for 60 s, kept
@@ -36,7 +45,7 @@ export const USER = {
   staleTime: MINUTE,
   gcTime: 15 * MINUTE,
   refetchOnWindowFocus: true,
-  retry: 1,
+  retry: retryOnceUnlessClientError,
 } as const;
 
 // Data that must never be shown as "fresh" (availability, reservations,
@@ -45,7 +54,7 @@ export const LIVE = {
   staleTime: 0,
   gcTime: 5 * MINUTE,
   refetchOnWindowFocus: true,
-  retry: 1,
+  retry: retryOnceUnlessClientError,
 } as const;
 
 // Resources that legitimately may not exist yet (KYC record for a new

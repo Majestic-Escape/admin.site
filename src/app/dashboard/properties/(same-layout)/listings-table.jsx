@@ -93,9 +93,6 @@ const StatusPill = ({ status }) => {
 };
 const StatusKyc = ({ data }) => {
   const getStatusColor = (data) => {
-    if (process.env.NEXT_PUBLIC_ENV === "dev") {
-      console.log("ssss", bank, kyc);
-    }
     if (data == true) {
       return "bg-green-100 text-green-800";
     } else {
@@ -168,7 +165,7 @@ const approveListing = async (listingId) => {
         },
       );
       if (!response.status == 200) {
-        throw new error("Something is wrong");
+        throw new Error("Something is wrong");
       }
       const result = await response.json();
       if (result.data == "hostDelist") {
@@ -200,7 +197,7 @@ const deListing = async (listingId) => {
         },
       );
       if (!response.status == 200) {
-        throw new error("Something is wrong");
+        throw new Error("Something is wrong");
       }
 
       return response.data;

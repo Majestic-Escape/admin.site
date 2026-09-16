@@ -403,7 +403,11 @@ export default function BookingsPage() {
     );
   };
   const sendData = async () => {
-    await sendRejectionToUser();
+    // There is no cancel handler on this page (the old call threw a
+    // ReferenceError). Cancellation — with its refund side effects — is done
+    // from the Bookings page, which has the confirmed flow.
+    setRejectDialogOpen(false);
+    toast.info("Cancel this booking from the Bookings page.");
   };
   const exportCheckinDate =
     date.from &&
