@@ -68,6 +68,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { parseFiniteNumber } from "@/lib/format";
+
+const fullName = (person) =>
+  `${person?.firstName ?? ""} ${person?.lastName ?? ""}`.trim() || "—";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function BookingsPage() {
@@ -193,7 +197,7 @@ export default function BookingsPage() {
       if (hosts && Array.isArray(hosts)) {
         const dataToExport = hosts.map((pro) => ({
           id: pro?.host?._id,
-          full_name: pro?.host?.firstName + " " + pro?.host?.lastName,
+          full_name: fullName(pro?.host),
           email: pro?.hostEmail,
           contact: pro?.host?.phoneNumber,
           total_property: pro?.totalProperty,
@@ -319,7 +323,7 @@ export default function BookingsPage() {
                 <TableRow key={item._id}>
                   <TableCell className="font-medium">
                     <span
-                      title={item?.firstName + " " + item?.lastName}
+                      title={fullName(item)}
                       onClick={() => {
                         router.push(
                           `/dashboard/host-history/host-profile?hostId=${item?._id}`,
@@ -327,7 +331,7 @@ export default function BookingsPage() {
                       }}
                       className="underline cursor-pointer"
                     >
-                      {checkLength(item?.firstName + " " + item?.lastName)}
+                      {checkLength(fullName(item))}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -353,7 +357,10 @@ export default function BookingsPage() {
                   <TableCell className="flex">
                     {" "}
                     <Star className="h-4 mr-2 w-4 text-yellow-400 ml-1" />{" "}
-                    {Math.ceil(Number(item?.averageRating) * 100) / 100}
+                    {parseFiniteNumber(item?.averageRating) === null
+                      ? "—"
+                      : Math.ceil(parseFiniteNumber(item?.averageRating) * 100) /
+                        100}
                   </TableCell>
 
                   {/* <TableCell className="text-right">
