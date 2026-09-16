@@ -218,6 +218,7 @@ export default function DetailView() {
         <ImageCollection
           images={propertyData?.photos || []}
           isLoading={isPropertyLoading}
+          title={propertyData?.title}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mt-0 md:mt-8">
