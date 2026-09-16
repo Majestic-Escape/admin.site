@@ -50,6 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { addMonths, format } from "date-fns";
+import { useRouter } from "next/navigation";
 import { formatINR, parseFiniteNumber } from "@/lib/format";
 
 // Razorpay amounts are in paise; a missing amount renders "—", not ₹NaN.
@@ -73,6 +74,7 @@ const transactions = [
 ];
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function TransactionsPage() {
+  const router = useRouter();
   const [date, setDate] = React.useState({
     from: addMonths(new Date(), -1),
     to: new Date(),

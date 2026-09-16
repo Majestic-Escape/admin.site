@@ -1,6 +1,7 @@
 "use client";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { useMemo, useEffect, useState } from "react";
 import ImageCollection from "./component/image-collection";
 import PropertyDetails from "./component/property-details";
@@ -62,6 +63,12 @@ export default function DetailView() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const propertyId = searchParams.get("property");
+  const queryClient = useQueryClient();
+  // After approve/delist resolved: this listing and the listings table.
+  const invalidateListing = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.property(propertyId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.adminListingsAll });
+  };
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   // const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [delistDialogOpen, setDelistDialogOpen] = useState(false);
@@ -75,9 +82,8 @@ export default function DetailView() {
     error: propertyError, // Renamed for clarity
     isFetching: isPropertyFetching,
     isError: isPropertyError,
-    refetch: refetchProperty,
   } = useQuery({
-    queryKey: ["property", propertyId],
+    queryKey: queryKeys.property(propertyId),
     queryFn: () => fetchProperty(propertyId),
     enabled: !!propertyId, // Only run if propertyId exists
     // Optional: Add staleTime, cacheTime etc.
@@ -142,7 +148,7 @@ export default function DetailView() {
           await propertyService.approveListing(propertyId);
           toast.success("Property successfully listed");
           setApproveDialogOpen(false);
-          refetchProperty();
+          invalidateListing();
           refetchHost();
         }}
       />
@@ -168,7 +174,7 @@ export default function DetailView() {
           await propertyService.handleConfirmDelist(propertyId);
           toast.success("Property successfully delisted");
           setDelistDialogOpen(false);
-          refetchProperty();
+          invalidateListing();
           refetchHost();
         }}
       />
