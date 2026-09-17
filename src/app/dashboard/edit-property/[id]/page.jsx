@@ -93,13 +93,6 @@ const EditPropertyPage = () => {
       setTimeout(() => {
         // setShowMembershipPopup(true);
       }, 2000);
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
-      }, 2100);
       // router.push("/host/dashboard");
     } catch (error) {
       toast.dismiss(toastId);

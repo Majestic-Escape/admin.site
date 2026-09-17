@@ -596,8 +596,8 @@ export default function HostProfilePage() {
 
                 <TableCell>₹ {item?.basePrice}</TableCell>
                 <TableCell>
-                  {item?.propertyType[0].toUpperCase() +
-                    item?.propertyType?.slice(1)}
+                  {(item?.propertyType?.[0]?.toUpperCase() ?? "") +
+                    (item?.propertyType?.slice(1) ?? "")}
                 </TableCell>
                 <TableCell>
                   <StatusPill status={item?.placeType} />

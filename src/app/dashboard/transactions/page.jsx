@@ -50,6 +50,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { addMonths, format } from "date-fns";
+import { useRouter } from "next/navigation";
+import { formatINR, parseFiniteNumber } from "@/lib/format";
+
+// Razorpay amounts are in paise; a missing amount renders "—", not ₹NaN.
+const paiseToINR = (amount) => {
+  const n = parseFiniteNumber(amount);
+  return n === null ? "—" : formatINR(n / 100);
+};
 
 // Transaction entry for the booking "Listing for Goa" by guest "Divya Yash"
 const transactions = [
@@ -66,6 +74,7 @@ const transactions = [
 ];
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function TransactionsPage() {
+  const router = useRouter();
   const [date, setDate] = React.useState({
     from: addMonths(new Date(), -1),
     to: new Date(),
@@ -168,7 +177,7 @@ export default function TransactionsPage() {
                 {transaction?.paymentType}
               </Badge>
             </TableCell>
-            <TableCell>₹{Number(transaction?.amount) / 100}</TableCell>
+            <TableCell>{paiseToINR(transaction?.amount)}</TableCell>
             <TableCell>
               <Badge
                 variant={transaction?.status === "paid" ? "success" : "warning"}
@@ -176,7 +185,7 @@ export default function TransactionsPage() {
                 {transaction?.status}
               </Badge>
             </TableCell>
-            <TableCell>{transaction?.createdAt.split("T")[0]}</TableCell>
+            <TableCell>{transaction?.createdAt?.split("T")[0] ?? "—"}</TableCell>
             <TableCell>{transaction?.customerDetails?.name}</TableCell>
             <TableCell>{transaction?.propertyId?.title}</TableCell>
             <TableCell>{transaction?.paymentMethod}</TableCell>

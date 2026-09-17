@@ -30,13 +30,19 @@ export default function DashboardLayout({ children }) {
   const { user, logout } = useAuth();
   const router = useRouter();
 
-  const auth = async () => {
-    const getLocalData = await localStorage.getItem("token");
-    const data = JSON.parse(getLocalData);
-    if (data) {
-      setIsAuth(true);
-      setLoading(false);
+  const auth = () => {
+    // Presence check only (the API enforces auth). `loading` used to stay
+    // true forever without a token → endless spinner when logged out; a
+    // corrupt token value used to throw.
+    let hasToken = false;
+    try {
+      const raw = localStorage.getItem("token");
+      hasToken = !!raw && (raw.startsWith('"') ? !!JSON.parse(raw) : true);
+    } catch {
+      hasToken = false;
     }
+    setIsAuth(hasToken);
+    setLoading(false);
   };
 
   useEffect(() => {
