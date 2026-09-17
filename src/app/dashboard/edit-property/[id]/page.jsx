@@ -39,9 +39,11 @@ const EditPropertyPage = () => {
       if (!id) return;
       try {
         setIsLoading(true);
-        console.log("enter property");
+        // The raw document (host email, street, registration number) is
+        // admin-only on the backend: send the admin session.
         const response = await axios.get(
           `${API_BASE_URL}/prop-listing/admin/${id}`,
+          { headers: adminAuthHeaders() },
         );
         const listing = await response?.data;
 
