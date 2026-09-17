@@ -404,12 +404,19 @@ export default function KycDetailsPage() {
           if (!open) setPdf(null);
         }}
       >
-        <DialogContent className="h-[85vh] w-[calc(100%-2rem)] max-w-4xl p-4 sm:p-6">
+        <DialogContent className="flex h-[85vh] w-[calc(100%-2rem)] max-w-4xl flex-col p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>{pdf?.title}</DialogTitle>
-            <DialogDescription>Preview of the uploaded PDF.</DialogDescription>
+            <DialogDescription>
+              Preview of the uploaded PDF. The viewer takes keyboard focus — use the Close button to dismiss.
+            </DialogDescription>
           </DialogHeader>
-          {pdf ? <iframe src={pdf.url} title={pdf.title} className="h-full w-full rounded border bg-white" /> : null}
+          {pdf ? <iframe src={pdf.url} title={pdf.title} className="min-h-0 w-full flex-1 rounded border bg-white" /> : null}
+          <div className="flex justify-end pt-2">
+            <Button type="button" variant="outline" onClick={() => setPdf(null)}>
+              Close
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

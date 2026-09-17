@@ -450,9 +450,13 @@ export function ListingsTable() {
           />
         ),
         cell: ({ row }) => (
+          // data-no-navigate: the whole row opens the listing on click; the
+          // selection checkbox must not (it made bulk actions unusable).
           <input
             type="checkbox"
             className="accent-primaryGreen"
+            data-no-navigate="true"
+            aria-label={`Select ${row.original?.title || "listing"}`}
             checked={row.getIsSelected()}
             onChange={(e) => row.toggleSelected(e.target.checked)}
           />
@@ -711,6 +715,9 @@ export function ListingsTable() {
   const table = useReactTable({
     data,
     columns,
+    // Rows are identified by listing id, never by index, so a selection can
+    // never drift onto a different listing when the data changes.
+    getRowId: (row) => String(row._id),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -730,6 +737,11 @@ export function ListingsTable() {
   const handlePageChange = useCallback((newPage) => {
     setPage(newPage);
   }, []);
+  // A new search / filter / page shows different rows: start the selection
+  // over so bulk actions only ever apply to what is on screen.
+  useEffect(() => {
+    setRowSelection({});
+  }, [searchTerm, statusFilter, page]);
   const pendingSelectedCount = table
     .getSelectedRowModel()
     .rows.filter((r) => isPendingListing(r.original)).length;
