@@ -70,6 +70,11 @@ import { properties } from "../../../../lib/property-type";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { Pencil } from "lucide-react";
+import Link from "next/link";
+import EditUserNameDialog from "@/components/edit-user-name-dialog";
+import { queryKeys } from "@/lib/query-keys";
 
 export default function HostProfilePage() {
   const [propertys, setPropertys] = React.useState([]);
@@ -83,6 +88,15 @@ export default function HostProfilePage() {
   const hostId = searchParams.get("hostId");
 
   const [guestProfile, setGuestProfile] = React.useState([]);
+  // Rename (Batch A2): keeps this page's local profile state in step and
+  // tells the cached Users table to refetch.
+  const [editingName, setEditingName] = React.useState(false);
+  const queryClient = useQueryClient();
+  const handleNameSaved = (data) => {
+    if (!data) return;
+    setGuestProfile((prev) => (prev ? { ...prev, firstName: data.firstName, lastName: data.lastName } : prev));
+    queryClient.invalidateQueries({ queryKey: queryKeys.adminGuestsAll });
+  };
   const [selectedBookings, setSelectedBookings] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [activeTab, setActiveTab] = React.useState("all");
@@ -290,9 +304,27 @@ export default function HostProfilePage() {
             </div>
 
             <div className="text-center max-w-md">
-              <h1 className="text-2xl font-semibold">
-                {profile?.firstName + " " + profile?.lastName}
-              </h1>
+              <div className="flex items-center justify-center gap-2">
+                <h1 className="text-2xl font-semibold">
+                  {[profile?.firstName, profile?.lastName].filter(Boolean).join(" ")}
+                </h1>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  aria-label="Edit name"
+                  title="Edit name"
+                  onClick={() => setEditingName(true)}
+                >
+                  <Pencil className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </div>
+              <EditUserNameDialog
+                user={profile ? { _id: profile._id ?? hostId, firstName: profile.firstName ?? "", lastName: profile.lastName ?? "", email: profile.email } : null}
+                open={editingName}
+                onOpenChange={setEditingName}
+                onSaved={handleNameSaved}
+              />
               <p className="text-gray-600 text-sm mt-1">
                 +91-{profile?.phoneNumber}
                 {/* <a className="text-blue-600 underline">Learn more</a> */}
@@ -394,6 +426,15 @@ export default function HostProfilePage() {
                 />
               </>
             ) : null}
+            <ProfileItem label="KYC Documents" />
+            <div className="flex items-center justify-between border-b pb-3">
+              <Link
+                href={`/dashboard/kyc-details/${hostId}`}
+                className="text-primaryGreen underline underline-offset-2 hover:text-brightGreen"
+              >
+                View uploaded documents
+              </Link>
+            </div>
             {kycData?.gstInfo?.isVerified == true ? (
               <>
                 <ProfileItem label="GST Number" />

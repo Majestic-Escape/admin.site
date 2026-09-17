@@ -27,6 +27,7 @@ import {
   ArrowUpRight,
   Download,
   Filter,
+  Pencil,
   Search,
   SortAsc,
   Users,
@@ -40,14 +41,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { GuestTableSkeleton } from "./guest-table-skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import EditUserNameDialog from "@/components/edit-user-name-dialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {
@@ -62,14 +56,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function GuestsPage() {
   const [selectedFilters, setSelectedFilters] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [deleteGuestId, setDeleteGuestId] = React.useState(null);
-  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+  // Rename (Batch A2): the row being edited; null closes the dialog.
+  const [editingUser, setEditingUser] = React.useState(null);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [skip, setSkip] = React.useState(0);
   const router = useRouter();
   // Cached per search/page (USER preset); page changes keep the previous
-  // rows on screen. Delete/ban update the cached row after the 2xx and
+  // rows on screen. Rename/ban update the cached row after the 2xx and
   // invalidate adminGuestsAll.
   const queryClient = useQueryClient();
   const filters = { searchTerm, rowsPerPage, skip };
@@ -123,45 +117,17 @@ export default function GuestsPage() {
     queryClient.invalidateQueries({ queryKey: queryKeys.adminGuestsAll });
   };
 
-  const handleConfirmDelete = async () => {
-    if (deleteGuestId) {
-      const getLocalData = await localStorage.getItem("token");
-      const data = JSON.parse(getLocalData);
-      if (data) {
-        try {
-          const result = await fetch(
-            `${API_URL}/guests/delete/${deleteGuestId}`,
-            {
-              method: "DELETE",
-              headers: {
-                Authorization: `Bearer ${data}`,
-                "Content-Type": "application/json",
-              },
-            },
-          );
-          if (!result.ok) {
-            throw new Error("Failed to delete guests ");
-          }
-
-          setGuests((prev) =>
-            prev.filter((guest) => guest._id != deleteGuestId),
-          );
-          toast.success("Successfully deleted the guest");
-        } catch (err) {
-          if (process.env.NEXT_PUBLIC_ENV === "dev") {
-            console.log(err);
-          }
-          alert("Failed to delete guest.");
-        }
-        setShowDeleteDialog(false);
-        setDeleteGuestId(null);
-      }
-    }
-  };
-
-  const handleDeleteClick = (guestId) => {
-    setDeleteGuestId(guestId);
-    setShowDeleteDialog(true);
+  // After a rename resolved (or a 409 told us someone else renamed first):
+  // patch the row with the server's current values, then refetch.
+  const handleNameSaved = (data) => {
+    if (!data || !editingUser) return;
+    setGuests((prev) =>
+      prev.map((guest) =>
+        guest._id === editingUser._id
+          ? { ...guest, firstName: data.firstName, lastName: data.lastName }
+          : guest,
+      ),
+    );
   };
 
   const handleToggleBan = async (guestId, currentStatus) => {
@@ -242,7 +208,7 @@ export default function GuestsPage() {
         guest.lastName,
         guest.email,
         guest.phoneNumber,
-        guest.status.active ? "Active" : "Inactive",
+        guest.status?.active ? "Active" : "Inactive",
       ];
       csvRows.push(row.join(","));
     });
@@ -337,7 +303,8 @@ export default function GuestsPage() {
                 Guest List
               </CardTitle>
               <CardDescription>
-                Manage and view details of all guests
+                Every registered account — hosts are marked. Edit a name with
+                the pencil, review KYC, or ban.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -462,10 +429,17 @@ export default function GuestsPage() {
                       {guests.map((guest) => (
                         <TableRow key={guest._id}>
                           <TableCell className="font-medium">
-                            <div className="flex items-center w-full">
+                            <div className="flex items-center gap-2 w-full">
                               <span className="w-32">
-                                {guest.firstName + " " + guest.lastName}
+                                {[guest.firstName, guest.lastName]
+                                  .filter(Boolean)
+                                  .join(" ")}
                               </span>
+                              {guest.isHost ? (
+                                <span className="inline-flex items-center rounded-full bg-primaryGreen/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primaryGreen">
+                                  Host
+                                </span>
+                              ) : null}
                             </div>
                           </TableCell>
                           <TableCell>{guest.email}</TableCell>
@@ -476,28 +450,32 @@ export default function GuestsPage() {
                           <TableCell>
                             <span
                               className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                guest.status.active
+                                guest.status?.active
                                   ? "bg-green-100 text-green-800"
                                   : "bg-red-100 text-red-800"
                               }`}
                             >
-                              {guest.status.active ? "Active" : "Inactive"}
+                              {guest.status?.active ? "Active" : "Inactive"}
                             </span>
                           </TableCell>
                           <TableCell className="flex">
-                            {/* <Button
-                              onClick={() => handleDeleteClick(guest._id)}
-                              variant="danger"
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="mr-2 h-8 w-8 bg-white"
+                              aria-label={`Edit name of ${[guest.firstName, guest.lastName].filter(Boolean).join(" ")}`}
+                              title="Edit name"
+                              onClick={() => setEditingUser(guest)}
                             >
-                              Delete
-                            </Button> */}
+                              <Pencil className="h-4 w-4" aria-hidden="true" />
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
                               className="mr-2 bg-white text-yellow-500 border border-yellow-500"
                               onClick={() =>
                                 router.push(
-                                  `/dashboard/kyc-details/${guest._id}?firstName=${guest.firstName}&lastName=${guest.lastName}`,
+                                  `/dashboard/kyc-details/${guest._id}?firstName=${encodeURIComponent(guest.firstName ?? "")}&lastName=${encodeURIComponent(guest.lastName ?? "")}`,
                                 )
                               }
                             >
@@ -508,20 +486,12 @@ export default function GuestsPage() {
                               variant="outline"
                               className="ml-2 bg-white text-red-500 border border-red-500"
                               onClick={() =>
-                                handleToggleBan(guest._id, guest.status.active)
+                                handleToggleBan(guest._id, guest.status?.active)
                               }
                             >
-                              {guest.status.active ? "Ban" : "Unban"}
+                              {guest.status?.active ? "Ban" : "Unban"}
                             </Button>
                           </TableCell>
-                          {/* <TableCell>
-                            <Button
-                              onClick={() => handleDeleteClick(guest._id)}
-                              variant="danger"
-                            >
-                              Delete
-                            </Button>
-                          </TableCell> */}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -574,31 +544,14 @@ export default function GuestsPage() {
                   </div>
                 </>
               )}
-              <Dialog
-                open={showDeleteDialog}
-                onOpenChange={setShowDeleteDialog}
-              >
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Confirm guest deletion</DialogTitle>
-                    <DialogDescription>
-                      Are you sure you want to delete this guest? This action
-                      cannot be undone.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowDeleteDialog(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button variant="destructive" onClick={handleConfirmDelete}>
-                      Delete
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <EditUserNameDialog
+                user={editingUser}
+                open={!!editingUser}
+                onOpenChange={(open) => {
+                  if (!open) setEditingUser(null);
+                }}
+                onSaved={handleNameSaved}
+              />
             </CardContent>
           </Card>
         </TabsContent>
