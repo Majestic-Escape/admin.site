@@ -58,6 +58,7 @@ import {
 } from "@tanstack/react-query";
 import { USER } from "@/lib/query-presets";
 import { queryKeys } from "@/lib/query-keys";
+import DeletePendingListingDialog, { isPendingListing } from "@/components/delete-pending-listing-dialog";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -227,7 +228,9 @@ export function ListingsTable() {
   const [rowSelection, setRowSelection] = useState({});
   // const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
-  // const [listingToDelete, setListingToDelete] = useState(null);
+  // Delete (Batch A2): the pending listings queued for deletion and how many
+  // of the selection were skipped because they are not pending.
+  const [deleteQueue, setDeleteQueue] = useState(null); // { listings, skipped } | null
   const [listingToApprove, setListingToApprove] = useState(null);
   const [listingToDelist, setListingToDelist] = useState(null);
   const [delistDialogOpen, setDelistDialogOpen] = useState(false);
@@ -344,45 +347,30 @@ export function ListingsTable() {
     }
   };
 
-  // const handleDeleteClick = useCallback((listing) => {
-  //   setListingToDelete(listing);
-  //   setDeleteDialogOpen(true);
-  // }, []);
+  const handleDeleteClick = useCallback((listing) => {
+    if (!isPendingListing(listing)) return;
+    setDeleteQueue({ listings: [listing], skipped: 0 });
+  }, []);
 
-  // const handleConfirmDelete = useCallback(async () => {
-  //   if (listingToDelete) {
-  //     const getLocalData = await localStorage.getItem("token");
-  //     const data = JSON.parse(getLocalData);
-  //     if (data) {
-  //       try {
-  //         const response = await fetch(
-  //           `${API_URL}/properties/user-property/${listingToDelete._id}`,
-  //           {
-  //             method: "DELETE",
-  //             headers: {
-  //               Authorization: `Bearer ${data}`,
-  //               "Content-Type": "application/json",
-  //             },
-  //           }
-  //         );
+  // Only pending rows are queued; the dialog tells the admin how many of
+  // the selection were skipped.
+  const handleBulkDeleteClick = () => {
+    const selected = table.getSelectedRowModel().rows.map((r) => r.original);
+    const pendingRows = selected.filter(isPendingListing);
+    if (!pendingRows.length) return toast.error("No pending listings selected");
+    setDeleteQueue({ listings: pendingRows, skipped: selected.length - pendingRows.length });
+  };
 
-  //         if (!response.ok) {
-  //           throw new Error("Failed to delete the listing");
-  //         }
-
-  //         setData((prevData) =>
-  //           prevData?.filter((item) => item._id !== listingToDelete._id)
-  //         );
-  //         setDeleteDialogOpen(false);
-  //         setListingToDelete(null);
-  //         toast.success("Listing deleted successfully");
-  //       } catch (error) {
-  //         console.error("Failed to delete listing:", error);
-  //         toast.error("Failed to delete listing");
-  //       }
-  //     }
-  //   }
-  // }, [listingToDelete]);
+  // Each deleted listing leaves the cache immediately; the table refetches
+  // once the whole queue finished.
+  const handleDeleted = (listing) => {
+    queryClient.removeQueries({ queryKey: queryKeys.property(listing._id) });
+  };
+  const handleDeleteFinished = () => {
+    setDeleteQueue(null);
+    table.resetRowSelection();
+    fetchFilteredListings();
+  };
 
   const handleBulkApprove = async () => {
     const selectedIds = table
@@ -415,38 +403,6 @@ export function ListingsTable() {
       toast.error("Failed to delist selected listings");
     }
   };
-
-  // const handleBulkDelete = async () => {
-  //   const selectedIds = table
-  //     .getSelectedRowModel()
-  //     .rows.map((r) => r.original._id);
-  //   if (selectedIds.length === 0) return toast.error("No listings selected");
-
-  //   const getLocalData = await localStorage.getItem("token");
-  //   const data = JSON.parse(getLocalData);
-
-  //   try {
-  //     await Promise.all(
-  //       selectedIds.map((id) =>
-  //         fetch(`${API_URL}/properties/user-property/${id}`, {
-  //           method: "DELETE",
-  //           headers: {
-  //             Authorization: `Bearer ${data}`,
-  //             "Content-Type": "application/json",
-  //           },
-  //         })
-  //       )
-  //     );
-  //     toast.success(`Deleted ${selectedIds.length} listing(s)`);
-  //     setDeleteDialogOpen(false);
-  //     setBulk(false);
-  //     fetchFilteredListings();
-  //     table.resetRowSelection();
-  //   } catch (err) {
-  //     console.error(err);
-  //     toast.error("Failed to delete selected listings");
-  //   }
-  // };
 
   const handleBulkDelist = async () => {
     const selectedIds = table
@@ -734,17 +690,22 @@ export function ListingsTable() {
                     Delist
                   </DropdownMenuItem>
                 )}
-
-                {/* <DropdownMenuItem onClick={() => handleDeleteClick(listing)}>
-                  Delete listing
-                </DropdownMenuItem> */}
+                {isPendingListing(listing) ? (
+                  <DropdownMenuItem
+                    data-no-navigate="true"
+                    className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                    onClick={() => handleDeleteClick(listing)}
+                  >
+                    Delete listing
+                  </DropdownMenuItem>
+                ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
           );
         },
       },
     ],
-    [handleImageClick],
+    [handleImageClick, handleApproveListing, handleDelisting, handleDeleteClick],
   );
 
   const table = useReactTable({
@@ -769,36 +730,22 @@ export function ListingsTable() {
   const handlePageChange = useCallback((newPage) => {
     setPage(newPage);
   }, []);
+  const pendingSelectedCount = table
+    .getSelectedRowModel()
+    .rows.filter((r) => isPendingListing(r.original)).length;
 
   return (
     <div className="w-full pb-24 md:pb-0">
-      {/* DIALOG FOR DELETING LISTING */}
-      {/* <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete the listing &quot;
-              {listingToDelete?.title}&quot;? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={bulk ? handleBulkDelete : handleConfirmDelete}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog> */}
-      {console.log("data", listingToApprove)}
+      <DeletePendingListingDialog
+        listings={deleteQueue?.listings ?? []}
+        skipped={deleteQueue?.skipped ?? 0}
+        open={!!deleteQueue}
+        onOpenChange={(open) => {
+          if (!open) setDeleteQueue(null);
+        }}
+        onDeleted={handleDeleted}
+        onFinished={handleDeleteFinished}
+      />
       <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -966,16 +913,6 @@ export function ListingsTable() {
             >
               Approve Selected
             </Button>
-            {/* <Button
-              variant="destructive"
-              onClick={() => {
-                setBulk(true);
-                setDeleteDialogOpen(true);
-              }}
-              className="text-white bg-red-600 hover:bg-red-700"
-            >
-              Delete Selected
-            </Button> */}
             <Button
               onClick={() => {
                 setBulk(true);
@@ -985,6 +922,15 @@ export function ListingsTable() {
             >
               Delist Selected
             </Button>
+            {pendingSelectedCount > 0 ? (
+              <Button
+                variant="destructive"
+                onClick={handleBulkDeleteClick}
+                className="text-white bg-red-600 hover:bg-red-700"
+              >
+                Delete pending ({pendingSelectedCount})
+              </Button>
+            ) : null}
           </div>
         </div>
       )}
