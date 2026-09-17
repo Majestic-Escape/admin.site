@@ -34,8 +34,9 @@ export function TaxAmountForm() {
           },
         });
         const result = await response.json();
-        setGst(result.data[0].gst || "");
-        setService(result.data[0].service || "");
+        // The config collection may be empty on a fresh environment.
+        setGst(result?.data?.[0]?.gst ?? "");
+        setService(result?.data?.[0]?.service ?? "");
       } catch (error) {
         console.error(error);
       }

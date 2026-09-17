@@ -15,6 +15,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             retry: 2,
             refetchOnWindowFocus: false,
             staleTime: 1000 * 30, // 30s: treat fresh for 30s
+            // Retain unmounted queries for 30 min so table → detail → table
+            // paints from cache (converted screens spread a preset on top).
+            gcTime: 1000 * 60 * 30,
           },
         },
       })

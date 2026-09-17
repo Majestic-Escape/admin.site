@@ -1,5 +1,24 @@
 "use client";
 import * as React from "react";
+
+// The guests endpoints require a Bearer token; this page used to call them
+// without one (always 401) and stored the response envelope instead of the
+// array (a render crash once it ever succeeded). Mirrors guests/page.jsx.
+const readToken = () => {
+  try {
+    const raw = localStorage.getItem("token");
+    if (!raw) return null;
+    return raw.startsWith('"') ? JSON.parse(raw) : raw;
+  } catch {
+    return null;
+  }
+};
+const authHeaders = () => {
+  const token = readToken();
+  return token
+    ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+    : { "Content-Type": "application/json" };
+};
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -61,7 +80,7 @@ export default function HostsPage() {
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
   React.useEffect(() => {
-    fetch(`${API_URL}/guests/`)
+    fetch(`${API_URL}/guests/`, { headers: authHeaders() })
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch guests data");
@@ -69,7 +88,8 @@ export default function HostsPage() {
         return response.json();
       })
       .then((data) => {
-        setHosts(data);
+        const list = Array.isArray(data) ? data : data?.data;
+        setHosts(Array.isArray(list) ? list : []);
         setLoading(false);
       })
       .catch((err) => {
@@ -81,9 +101,11 @@ export default function HostsPage() {
   const handleConfirmDelete = async () => {
     if (deleteHostId) {
       try {
-        await fetch(`${API_URL}/guests/delete/${deleteHostId}`, {
+        const res = await fetch(`${API_URL}/guests/delete/${deleteHostId}`, {
           method: "DELETE",
+          headers: authHeaders(),
         });
+        if (!res.ok) throw new Error("Failed to delete host");
         setHosts((prev) => prev.filter((guest) => guest.id !== deleteHostId));
       } catch (err) {
         if (process.env.NEXT_PUBLIC_ENV === "dev") {
@@ -103,11 +125,12 @@ export default function HostsPage() {
 
   const handleToggleBan = async (guestId, currentStatus) => {
     try {
-      await fetch(`${API_URL}/guests/${guestId}/ban`, {
+      const res = await fetch(`${API_URL}/guests/ban/${guestId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({ active: !currentStatus }),
       });
+      if (!res.ok) throw new Error("Failed to update ban status");
       setHosts((prev) =>
         prev.map((guest) =>
           guest.id === guestId

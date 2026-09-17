@@ -16,6 +16,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { formatINR, formatTime12h, parseDate } from "@/lib/format";
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function BookingPage() {
@@ -65,9 +66,6 @@ export default function BookingPage() {
     fetchBooking();
   }, []);
 
-  const changeTime = (num) => {
-    return `${Number(num) - 12} p.m.`;
-  };
   if (process.env.NEXT_PUBLIC_ENV === "dev") {
     console.log("m", fetchedData);
   }
@@ -91,9 +89,13 @@ export default function BookingPage() {
       </div>
     );
   }
-  const checkInDate = new Date(fetchedData?.checkIn);
-
-  const checkOutDate = new Date(fetchedData?.checkOut);
+  // Stay dates are UTC-midnight instants; invalid/missing → null → "—".
+  const checkInDate = parseDate(fetchedData?.checkIn);
+  const checkOutDate = parseDate(fetchedData?.checkOut);
+  const longDate = (d) =>
+    d
+      ? `${days[d.getUTCDay()]}, ${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`
+      : "—";
   const days = [
     "Sunday",
     "Monday",
@@ -124,9 +126,8 @@ export default function BookingPage() {
         <div className=" max-w-7xl mx-auto py-4 ml-10 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-semibold font-bricolage text-absoluteDark mt-4">
-              {fetchedData?.hostId?.firstName +
-                " " +
-                fetchedData?.hostId?.lastName}
+              {`${fetchedData?.hostId?.firstName ?? ""} ${fetchedData?.hostId?.lastName ?? ""}`.trim() ||
+                "—"}
             </h2>
             <p className="pt-3">
               <span className=" text-gray-500 font-bold"> Booking Id : </span>{" "}
@@ -159,12 +160,10 @@ export default function BookingPage() {
                   {fetchedData?.propertyId?.photos}
                 </h3>
                 <p className="text-gray-600 text-sm">
-                  {fetchedData?.propertyId?.placeType.charAt(0).toUpperCase() +
-                    fetchedData?.propertyId?.placeType.slice(1)}{" "}
-                  {fetchedData?.propertyId?.propertyType
-                    .charAt(0)
-                    .toUpperCase() +
-                    fetchedData?.propertyId?.propertyType.slice(1)}{" "}
+                  {(fetchedData?.propertyId?.placeType?.charAt(0)?.toUpperCase() ?? "") +
+                    (fetchedData?.propertyId?.placeType?.slice(1) ?? "")}{" "}
+                  {(fetchedData?.propertyId?.propertyType?.charAt(0)?.toUpperCase() ?? "") +
+                    (fetchedData?.propertyId?.propertyType?.slice(1) ?? "")}{" "}
                   by {fetchedData?.userId?.firstName}{" "}
                   {fetchedData?.userId?.hostLastName}
                 </p>
@@ -174,40 +173,26 @@ export default function BookingPage() {
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <p>
-                      {days[checkInDate?.getDay()]},{" "}
-                      <strong>
-                        {months[checkInDate?.getMonth()]}{" "}
-                        {checkInDate?.getDate()}, {checkInDate?.getFullYear()}
-                      </strong>
+                      <strong>{longDate(checkInDate)}</strong>
                       <br />
-                      Check-in :{" "}
-                      {fetchedData?.propertyId?.checkinTime > 11
-                        ? changeTime(fetchedData?.propertyId?.checkinTime)
-                        : `${fetchedData?.propertyId?.checkinTime} a.m.`}
+                      Check-in : {formatTime12h(fetchedData?.propertyId?.checkinTime)}
                     </p>
                   </div>
                   <div>
                     <p>
-                      {days[checkOutDate?.getDay()]},{" "}
-                      <strong>
-                        {months[checkOutDate?.getMonth()]}{" "}
-                        {checkOutDate?.getDate()}, {checkOutDate?.getFullYear()}
-                      </strong>
+                      <strong>{longDate(checkOutDate)}</strong>
                       <br />
-                      Check-out :{" "}
-                      {fetchedData?.propertyId?.checkoutTime > 11
-                        ? changeTime(fetchedData?.propertyId?.checkoutTime)
-                        : `${fetchedData?.propertyId?.checkoutTime} a.m.`}
+                      Check-out : {formatTime12h(fetchedData?.propertyId?.checkoutTime)}
                     </p>
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-700">Nights</h4>
-                    <p className="text-gray-500">{fetchedData?.nights}</p>
+                    <p className="text-gray-500">{fetchedData?.nights ?? "—"}</p>
                   </div>
 
                   <div>
                     <h4 className="font-medium text-gray-700">Total Guests</h4>
-                    <p className="text-gray-500">{fetchedData?.guests}</p>
+                    <p className="text-gray-500">{fetchedData?.guests ?? "—"}</p>
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-700">Adults</h4>
@@ -233,7 +218,7 @@ export default function BookingPage() {
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-700">Amount Paid</h4>
-                  <p className="text-gray-500">₹{fetchedData?.price}.00</p>
+                  <p className="text-gray-500">{formatINR(fetchedData?.price)}</p>
                 </div>
 
                 <div>

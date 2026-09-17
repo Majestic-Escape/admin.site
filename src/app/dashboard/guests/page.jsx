@@ -50,6 +50,13 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { USER } from "@/lib/query-presets";
+import { queryKeys } from "@/lib/query-keys";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function GuestsPage() {
@@ -57,51 +64,64 @@ export default function GuestsPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [deleteGuestId, setDeleteGuestId] = React.useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
-  const [guests, setGuests] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [skip, setSkip] = React.useState(0);
-  const [count, setCount] = React.useState(0);
   const router = useRouter();
-  const getData = async () => {
-    const getLocalData = await localStorage.getItem("token");
-    const data = JSON.parse(getLocalData);
-    if (data) {
-      fetch(
+  // Cached per search/page (USER preset); page changes keep the previous
+  // rows on screen. Delete/ban update the cached row after the 2xx and
+  // invalidate adminGuestsAll.
+  const queryClient = useQueryClient();
+  const filters = { searchTerm, rowsPerPage, skip };
+  const {
+    data: guestsResult,
+    isPending: loading,
+    isPlaceholderData,
+    isFetching,
+    error,
+  } = useQuery({
+    queryKey: queryKeys.adminGuests(filters),
+    queryFn: async () => {
+      let token = null;
+      try {
+        const raw = localStorage.getItem("token");
+        token = raw ? JSON.parse(raw) : null;
+      } catch {
+        token = null;
+      }
+      if (!token) return { data: [], total: 0 };
+      const response = await fetch(
         `${API_URL}/guests/?search=${searchTerm}&limit=${rowsPerPage}&skip=${rowsPerPage * skip}`,
         {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${data}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         },
-      )
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Failed to fetch guests data");
-          }
-          return response.json();
-        })
-        .then((result) => {
-          if (process.env.NEXT_PUBLIC_ENV === "dev") {
-            console.log("what", result);
-          }
-          setGuests(result.data);
-          setCount(result.total);
-          setLoading(false);
-        })
-        .catch((err) => {
-          setError(err.message);
-          setLoading(false);
-        });
-    }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch guests data");
+      }
+      const result = await response.json();
+      return {
+        data: Array.isArray(result?.data) ? result.data : [],
+        total: result?.total ?? 0,
+      };
+    },
+    ...USER,
+    placeholderData: keepPreviousData,
+  });
+  const guests = guestsResult?.data ?? [];
+  const count = guestsResult?.total ?? 0;
+  // Patch the cached page in place (the row disappears / flips immediately
+  // after the server confirmed), then let every guests query refetch.
+  const setGuests = (updater) => {
+    queryClient.setQueryData(queryKeys.adminGuests(filters), (prev) =>
+      prev ? { ...prev, data: updater(prev.data ?? []) } : prev,
+    );
+    queryClient.invalidateQueries({ queryKey: queryKeys.adminGuestsAll });
   };
-  React.useEffect(() => {
-    getData();
-  }, [searchTerm, rowsPerPage, skip]);
 
   const handleConfirmDelete = async () => {
     if (deleteGuestId) {
@@ -239,7 +259,7 @@ export default function GuestsPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (error) return <p>Error: {error}</p>;
+  if (error) return <p>Error: {error.message}</p>;
 
   return (
     <div className="flex-1 space-y-4 bg-gray-200 px-8 pt-8 pb-24 md:p-8 md:pt-6">
@@ -432,7 +452,13 @@ export default function GuestsPage() {
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody
+                      className={
+                        isPlaceholderData || isFetching
+                          ? "opacity-60 transition-opacity"
+                          : "transition-opacity"
+                      }
+                    >
                       {guests.map((guest) => (
                         <TableRow key={guest._id}>
                           <TableCell className="font-medium">

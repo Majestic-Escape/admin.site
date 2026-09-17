@@ -126,7 +126,7 @@ export const propertyService = {
           }
         );
         if (!response) {
-          throw new error("Something is wrong");
+          throw new Error("Something is wrong");
         }
 
         return response.data;
@@ -180,7 +180,7 @@ export const propertyService = {
           }
         );
         if (!response.status == 200) {
-          throw new error("Something is wrong");
+          throw new Error("Something is wrong");
         }
 
         return response.data;
