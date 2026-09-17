@@ -51,6 +51,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImageCarouselPopup } from "./image-carousel-popup";
 import { toast } from "sonner";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { USER } from "@/lib/query-presets";
+import { queryKeys } from "@/lib/query-keys";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -86,9 +93,6 @@ const StatusPill = ({ status }) => {
 };
 const StatusKyc = ({ data }) => {
   const getStatusColor = (data) => {
-    if (process.env.NEXT_PUBLIC_ENV === "dev") {
-      console.log("ssss", bank, kyc);
-    }
     if (data == true) {
       return "bg-green-100 text-green-800";
     } else {
@@ -130,9 +134,10 @@ const getFilteredListings = async (
       return result;
     } catch (error) {
       if (error.response?.status === 401) {
+        // `router` isn't in scope in this module-level helper (it used to throw
+        // a ReferenceError here); the caller redirects on this message.
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
-        router.push("/"); // redirect to login
         throw new Error("Session expired. Please login again.");
       }
 
@@ -160,7 +165,7 @@ const approveListing = async (listingId) => {
         },
       );
       if (!response.status == 200) {
-        throw new error("Something is wrong");
+        throw new Error("Something is wrong");
       }
       const result = await response.json();
       if (result.data == "hostDelist") {
@@ -192,7 +197,7 @@ const deListing = async (listingId) => {
         },
       );
       if (!response.status == 200) {
-        throw new error("Something is wrong");
+        throw new Error("Something is wrong");
       }
 
       return response.data;
@@ -216,7 +221,6 @@ const SkeletonRow = ({ columns }) => (
 
 export function ListingsTable() {
   const router = useRouter();
-  const [data, setData] = useState([]);
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -228,44 +232,66 @@ export function ListingsTable() {
   const [listingToDelist, setListingToDelist] = useState(null);
   const [delistDialogOpen, setDelistDialogOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
   const [imagePopupOpen, setImagePopupOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const [selectedPropertyName, setSelectedPropertyName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [bulk, setBulk] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all"); // State to track the selected status filter
-  const [totalListings, setTotalListings] = useState(0);
-  const [totalActiveListings, setTotalActiveListings] = useState(0);
-  const [totalPendingListings, setTotalPendingListings] = useState(0);
-  const [listingsToday, setListingsToday] = useState(0);
+  const [listingsToday] = useState(0);
 
-  const fetchFilteredListings = useCallback(async () => {
-    setLoading(true);
-    try {
+  // Cached per filter set; page/filter changes keep the previous rows on
+  // screen (dimmed). Approve/delist invalidate adminListingsAll after the
+  // mutation resolved.
+  const queryClient = useQueryClient();
+  const {
+    data: listingsResult,
+    isPending: loading,
+    isPlaceholderData,
+    isFetching,
+    error: listingsError,
+  } = useQuery({
+    queryKey: queryKeys.adminListings({ searchTerm, statusFilter, page }),
+    queryFn: async () => {
       const response = await getFilteredListings(
         searchTerm,
         statusFilter,
         page,
         10,
-      ); // Pass the selected status filter
-
-      setData(response.properties);
-      setTotalListings(response.totalList);
-      setTotalActiveListings(response.totalActiveListings);
-      setTotalPendingListings(response.totalProcessingListings);
-      // setListingsToday(response.listingsToday);
-    } catch (error) {
-      console.error("Failed to fetch filtered listings:", error);
-      toast.error(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, searchTerm, statusFilter]);
-
+      );
+      return {
+        properties: Array.isArray(response?.properties)
+          ? response.properties
+          : [],
+        totalList: response?.totalList ?? 0,
+        totalActiveListings: response?.totalActiveListings ?? 0,
+        totalProcessingListings: response?.totalProcessingListings ?? 0,
+      };
+    },
+    ...USER,
+    placeholderData: keepPreviousData,
+  });
+  const data = listingsResult?.properties ?? [];
+  const totalListings = listingsResult?.totalList ?? 0;
+  const totalActiveListings = listingsResult?.totalActiveListings ?? 0;
+  const totalPendingListings = listingsResult?.totalProcessingListings ?? 0;
   useEffect(() => {
-    fetchFilteredListings(statusFilter); // Refetch with new status filter
-  }, [statusFilter, fetchFilteredListings]);
+    if (!listingsError) return;
+    console.error("Failed to fetch filtered listings:", listingsError);
+    toast.error(listingsError.message);
+    if (/Session expired/.test(listingsError?.message || "")) router.push("/");
+  }, [listingsError, router]);
+  const fetchFilteredListings = useCallback(
+    (listingId) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminListingsAll });
+      if (listingId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.property(listingId),
+        });
+      }
+    },
+    [queryClient],
+  );
 
   // Handle status filter change
   const handleStatusChange = (value) => {
@@ -290,7 +316,7 @@ export function ListingsTable() {
         toast.success("Listing approved successfully");
         setApproveDialogOpen(false);
         setListingToApprove(null);
-        fetchFilteredListings();
+        fetchFilteredListings(listingToApprove._id);
       }
     } catch (error) {
       console.error(error);
@@ -310,7 +336,7 @@ export function ListingsTable() {
         toast.success("Listing delist successfully");
         setDelistDialogOpen(false);
         setListingToDelist(null);
-        fetchFilteredListings();
+        fetchFilteredListings(listingToDelist._id);
       }
     } catch (error) {
       console.error(error);
@@ -984,7 +1010,13 @@ export function ListingsTable() {
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody
+            className={
+              isPlaceholderData || isFetching
+                ? "opacity-60 transition-opacity"
+                : "transition-opacity"
+            }
+          >
             {loading ? (
               Array.from({ length: 10 }).map((_, index) => (
                 <SkeletonRow key={index} columns={columns} />

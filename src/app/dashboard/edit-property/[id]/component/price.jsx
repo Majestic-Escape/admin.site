@@ -58,7 +58,6 @@ export function Price({ formData, updateFormData }) {
                   type="number"
                   value={basePrice}
                   onChange={(e) => {
-                    setBasePrice(e.target.value);
                     handleChange(e);
                   }}
                   placeholder="Base price / night"

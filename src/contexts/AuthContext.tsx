@@ -2,7 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCheckToken } from "@/services/useCheckToken";
+import { isPlainObject, readJSON } from "@/lib/storage";
 type Admin = {
   email: string;
 
@@ -115,15 +117,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [hosts, setHosts] = useState<Hosts | null>(null);
   const [hostId, setHostId] = useState<String>("");
+  const queryClient = useQueryClient();
   useEffect(() => {
-    // Check for existing admin in localStorage on initial load
-    const storedAdmin = localStorage.getItem("admin");
+    // Check for existing admin in localStorage on initial load (tolerant of
+    // a corrupt value: a parse error here used to take every route down).
+    const storedAdmin = readJSON<Admin | null>(
+      localStorage,
+      "admin",
+      null,
+      (v): v is Admin => isPlainObject(v),
+    );
     if (storedAdmin) {
-      setAdmin(JSON.parse(storedAdmin));
+      setAdmin(storedAdmin);
     }
   }, []);
 
   const login = (adminData: Admin) => {
+    // Never reuse another account's cached data in the same tab.
+    queryClient.clear();
     setAdmin(adminData);
     localStorage.setItem("admin", JSON.stringify(adminData));
   };
@@ -131,6 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const logout = () => {
     setAdmin(null);
     localStorage.removeItem("admin");
+    queryClient.clear();
   };
   const { checkToken } = useCheckToken();
   const pathname = usePathname();

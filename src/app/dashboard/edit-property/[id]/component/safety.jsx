@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useMemo, useState } from "react";
 import { MessageCircle, Zap, Bolt } from "lucide-react";
+import { toast } from "sonner";
 import {
   Accordion,
   AccordionContent,

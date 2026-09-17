@@ -2,24 +2,24 @@
 
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import PhotoLightbox from "@/components/ui/photo-lightbox";
 import { useState } from "react";
-import PhotoGalleryModal from "./photo-gallery-modal";
 
 interface ImageGalleryProps {
   images: string[];
   isLoading: boolean;
   height?: number; // Optional prop to control the height
+  title?: string;
 }
 
 export default function ImageCollection({
   images,
   isLoading,
   height = 360,
+  title,
 }: ImageGalleryProps) {
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  // process.env.ENV === 'dev' && if (process.env.NEXT_PUBLIC_ENV === "dev") {
-  //   console.log("Photos", images);
-  // }
+  // Which photo the lightbox opens on; null = closed.
+  const [openAt, setOpenAt] = useState<number | null>(null);
 
   // Limit to 5 images for display in the grid
   const displayImages = images.slice(0, 5);
@@ -41,7 +41,7 @@ export default function ImageCollection({
 
   return (
     <>
-      <div className="relative" style={{ height: `${height}px` }}>
+      <div className="relative me-fade-in" style={{ height: `${height}px` }}>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 rounded-xl overflow-hidden h-full">
           <div className="sm:col-span-2 sm:row-span-2 relative h-full">
             {displayImages.length > 0 ? (
@@ -51,7 +51,7 @@ export default function ImageCollection({
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 50vw"
                 className="object-cover cursor-pointer"
-                onClick={() => setIsGalleryOpen(true)}
+                onClick={() => setOpenAt(0)}
               />
             ) : (
               <Image
@@ -74,24 +74,28 @@ export default function ImageCollection({
                 fill
                 sizes="(max-width: 768px) 50vw, 25vw"
                 className="object-cover cursor-pointer"
-                onClick={() => setIsGalleryOpen(true)}
+                onClick={() => setOpenAt(index + 1)}
               />
             </div>
           ))}
         </div>
         {images.length > 0 && (
           <button
-            onClick={() => setIsGalleryOpen(true)}
-            className="absolute bottom-6 right-6 bg-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-gray-100"
+            onClick={() => setOpenAt(0)}
+            className="absolute bottom-6 right-6 bg-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-gray-100 transition active:scale-95 motion-reduce:active:scale-100"
           >
             Show all photos
           </button>
         )}
       </div>
-      <PhotoGalleryModal
+      <PhotoLightbox
         images={images}
-        isOpen={isGalleryOpen}
-        onClose={() => setIsGalleryOpen(false)}
+        open={openAt !== null}
+        onOpenChange={(open) => {
+          if (!open) setOpenAt(null);
+        }}
+        initialIndex={openAt ?? 0}
+        title={title}
       />
     </>
   );

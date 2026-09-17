@@ -51,6 +51,10 @@ import { useEffect } from "react";
 import { addMonths, format } from "date-fns";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { formatDate, parseFiniteNumber } from "@/lib/format";
+
+const fullName = (person) =>
+  `${person?.firstName ?? ""} ${person?.lastName ?? ""}`.trim() || "—";
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 // Mock data for reviews
 const reviews = [
@@ -298,7 +302,7 @@ const ReviewsPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {reviewData?.averageRating ? reviewData?.averageRating : "N/A"}
+              {parseFiniteNumber(reviewData?.averageRating) ?? "N/A"}
             </div>
             <p className="text-xs text-muted-foreground">Out of 5 stars</p>
           </CardContent>
@@ -321,7 +325,7 @@ const ReviewsPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {reviewData?.reviewCount ? reviewData?.reviewCount : "N/A"}
+              {parseFiniteNumber(reviewData?.reviewCount) ?? "N/A"}
             </div>
             <p className="text-xs text-muted-foreground">
               Across all properties
@@ -481,7 +485,7 @@ const ReviewsPage = () => {
                   </TableCell>
                   <TableCell
                     title={
-                      review?.user?.firstName + " " + review?.user?.lastName
+                      fullName(review?.user)
                     }
                   >
                     <div className="flex items-center">
@@ -491,16 +495,20 @@ const ReviewsPage = () => {
                         className="w-8 h-8 rounded-full mr-2"
                       />
                       {checkLength(
-                        review?.user?.firstName + " " + review?.user?.lastName,
+                        fullName(review?.user),
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    {new Date(review.createdAt).toLocaleDateString()}
+                    {formatDate(review?.createdAt, {
+                      day: "numeric",
+                      month: "numeric",
+                      year: "numeric",
+                    })}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center">
-                      {review.rating}
+                      {parseFiniteNumber(review?.rating) ?? "—"}
                       <Star className="h-4 w-4 text-yellow-400 ml-1" />
                     </div>
                   </TableCell>

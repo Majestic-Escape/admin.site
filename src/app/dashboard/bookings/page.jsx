@@ -72,6 +72,13 @@ import { addDays, addMonths, differenceInDays, format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { LIVE } from "@/lib/query-presets";
+import { queryKeys } from "@/lib/query-keys";
 
 // Added booking entry based on your provided details.
 // const bookings = [
@@ -88,17 +95,6 @@ import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function BookingsPage() {
-  const [bookings, setBookings] = React.useState([
-    // {
-    //   id: "booking_1",
-    //   guest: "Divya Yash",
-    //   property: "Listing for Goa",
-    //   checkIn: "24 March 2025",
-    //   checkOut: "28 March 2025",
-    //   total: "₹1,37,025",
-    //   status: "Pending",
-    // },
-  ]);
   const router = useRouter();
   const [date, setDate] = React.useState({
     from: new Date(),
@@ -118,7 +114,9 @@ export default function BookingsPage() {
   const [selectedBookings, setSelectedBookings] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [activeTab, setActiveTab] = React.useState("all");
-  const [loading, setLoading] = React.useState(true);
+  // `loading` is only the export spinner now; the table's own loading state
+  // comes from the query below (it used to be a fake 2 s timer).
+  const [loading, setLoading] = React.useState(false);
   const [propertyList, setPropertyList] = React.useState([]);
   const [userEmail, setUserEmail] = React.useState();
   const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
@@ -128,7 +126,6 @@ export default function BookingsPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [skip, setSkip] = React.useState(0);
-  const [count, setCount] = React.useState(0);
   const [mssg, setMssg] = React.useState(false);
   if (process.env.NEXT_PUBLIC_ENV === "dev") {
     console.log("cuy", catchData);
@@ -166,7 +163,7 @@ export default function BookingsPage() {
           return;
         }
         toast.success("You have modified the booking");
-        await fetchData();
+        await fetchData(bookingId);
         propertyType("");
         propertyTypeSearch("");
         guestCount("");
@@ -215,50 +212,74 @@ export default function BookingsPage() {
   if (process.env.NEXT_PUBLIC_ENV === "dev") {
     console.log("sup", catchData);
   }
-  const fetchData = async () => {
-    const getLocalData = await localStorage.getItem("token");
-    const data = JSON.parse(getLocalData);
-
-    // const from = date?.from ? new Date(date.from).toLocaleDateString() : null;
-    // const to = date?.to ? new Date(date.to).toLocaleDateString() : null;
-
-    const from = date?.from ? date.from.toLocaleDateString() : null;
-    const to = date?.to ? date.to.toLocaleDateString() : null;
-    console.log("here", from, to);
-    if (process.env.NEXT_PUBLIC_ENV === "dev") {
-      console.log("here", from);
-    }
-    setMssg(false);
-    if (data) {
+  // Bookings are LIVE data: cached rows paint instantly and always
+  // revalidate; filter/page changes keep the previous rows (dimmed) instead
+  // of a skeleton. Modify/cancel invalidate adminBookingsAll after the 2xx.
+  const queryClient = useQueryClient();
+  const from = date?.from ? date.from.toLocaleDateString() : null;
+  const to = date?.to ? date.to.toLocaleDateString() : null;
+  const filters = { searchTerm, activeTab, from, to, rowsPerPage, skip };
+  const {
+    data: bookingsResult,
+    isPending: bookingsPending,
+    isPlaceholderData,
+    isFetching,
+  } = useQuery({
+    queryKey: queryKeys.adminBookings(filters),
+    queryFn: async () => {
+      let token = null;
       try {
-        const response = await fetch(
-          `${API_URL}/booking/admin/analytics-filter?search=${searchTerm}&status=${activeTab}&from=${from}&to=${to}&limit=${rowsPerPage}&skip=${rowsPerPage * skip}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${data}`,
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        const result = await response.json();
-        if (process.env.NEXT_PUBLIC_ENV === "dev") {
-          console.log("aaaaaaa", result);
-        }
-        const mssg = await result.error;
-        if (mssg == "toDate") {
-          toast.error("Cannot select same date twice");
-          setMssg(true);
-        }
-        if (response.status != 200) {
-          return;
-        }
-        const final = await result.data;
-        setBookings(final);
-        setCount(result.total);
-      } catch (err) {
-        console.error(err);
+        const raw = localStorage.getItem("token");
+        token = raw ? JSON.parse(raw) : null;
+      } catch {
+        token = null;
       }
+      if (!token) return { data: [], total: 0, error: null };
+      const response = await fetch(
+        `${API_URL}/booking/admin/analytics-filter?search=${searchTerm}&status=${activeTab}&from=${from}&to=${to}&limit=${rowsPerPage}&skip=${rowsPerPage * skip}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      const result = await response.json().catch(() => ({}));
+      if (result?.error === "toDate") {
+        return { data: [], total: 0, error: "toDate" };
+      }
+      if (!response.ok) {
+        throw new Error(`Failed to fetch bookings (status: ${response.status})`);
+      }
+      return {
+        data: Array.isArray(result?.data) ? result.data : [],
+        total: result?.total ?? 0,
+        error: null,
+      };
+    },
+    ...LIVE,
+    placeholderData: keepPreviousData,
+  });
+  const bookings = bookingsResult?.data ?? [];
+  const count = bookingsResult?.total ?? 0;
+  React.useEffect(() => {
+    if (bookingsResult?.error === "toDate") {
+      toast.error("Cannot select same date twice");
+      setMssg(true);
+    } else if (bookingsResult) {
+      setMssg(false);
+    }
+  }, [bookingsResult]);
+  const fetchData = async (changedBookingId) => {
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.adminBookingsAll,
+    });
+    queryClient.invalidateQueries({ queryKey: queryKeys.adminAttention });
+    if (changedBookingId) {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.bookingById(changedBookingId),
+      });
     }
   };
 
@@ -292,19 +313,10 @@ export default function BookingsPage() {
   //     }
   //   }
   // };
-  React.useEffect(() => {
-    fetchData();
-  }, [searchTerm, activeTab, date, rowsPerPage, skip]);
 
   // React.useEffect(() => {
   //   fetchProperty();
   // }, []);
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
   // React.useEffect(() => {
   //   const fetchData = async () => {
   //     try {
@@ -435,15 +447,42 @@ export default function BookingsPage() {
 
       setRejectDialogOpen(false);
       toast.success("Booking successfully cancelled");
-      fetchData();
+      fetchData(bookingId);
       return response;
     } catch (err) {
       console.error(err);
     }
   };
 
+  // Operational queue (Batch S.1): paid bookings the server could not honour
+  // as-is (dates taken during payment, or a captured amount that is not the
+  // server quote). Money is never refunded automatically — someone here
+  // decides. Same LIVE freshness as the table; cancelling via "Cancel" on
+  // the row refunds and clears the item.
+  const { data: attentionResult } = useQuery({
+    queryKey: queryKeys.adminAttention,
+    queryFn: async () => {
+      let token = null;
+      try {
+        const raw = localStorage.getItem("token");
+        token = raw ? JSON.parse(raw) : null;
+      } catch {
+        token = null;
+      }
+      if (!token) return [];
+      const response = await fetch(`${API_URL}/booking/admin/attention`, {
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error(`Failed to fetch the attention queue (status: ${response.status})`);
+      const result = await response.json().catch(() => ({}));
+      return Array.isArray(result?.data) ? result.data : [];
+    },
+    ...LIVE,
+  });
+  const attentionItems = attentionResult ?? [];
+
   const renderBookingTable = (bookings) => {
-    if (loading) {
+    if (bookingsPending) {
       // Skeleton UI for the table structure
       return (
         <div className="space-y-2">
@@ -502,7 +541,8 @@ export default function BookingsPage() {
       if (process.env.NEXT_PUBLIC_ENV === "dev") {
         console.log("what sd is", booking?.hostId?._id);
       }
-      fetchProperty(booking?.hostId?._id);
+      // fetchProperty was removed long ago but this call stayed behind, so
+      // "Modify" threw a ReferenceError and the dialog never opened.
       setModifyDialogOpen(true);
 
       setBookingId(booking._id);
@@ -550,7 +590,13 @@ export default function BookingsPage() {
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody
+            className={
+              isPlaceholderData || isFetching
+                ? "opacity-60 transition-opacity"
+                : "transition-opacity"
+            }
+          >
             {bookings?.map((booking) => (
               <TableRow key={booking._id}>
                 <TableCell>
@@ -586,6 +632,18 @@ export default function BookingsPage() {
                 <TableCell>{booking?.price}</TableCell>
                 <TableCell>
                   <StatusPill status={booking?.status} />
+                  {booking?.needsAttention && (
+                    <span
+                      className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800"
+                      title={
+                        booking.needsAttention === "amount_mismatch"
+                          ? "Captured amount differs from the server quote"
+                          : "Dates were taken before the payment completed"
+                      }
+                    >
+                      Needs attention
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -944,6 +1002,45 @@ export default function BookingsPage() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {attentionItems.length > 0 && (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-900"
+        >
+          <p className="font-semibold">
+            {attentionItems.length === 1
+              ? "1 paid booking needs a decision"
+              : `${attentionItems.length} paid bookings need a decision`}
+          </p>
+          <ul className="mt-2 space-y-1">
+            {attentionItems.map((item) => (
+              <li key={item._id}>
+                <button
+                  type="button"
+                  className="underline underline-offset-2"
+                  onClick={() =>
+                    router.push(`/dashboard/booking-details?booking=${item._id}`)
+                  }
+                >
+                  {item?.propertyId?.title ?? "Listing"} —{" "}
+                  {item?.userId?.firstName ?? "guest"},{" "}
+                  {new Date(item?.checkIn).toDateString().slice(4)}
+                </button>
+                <span className="ml-2 text-red-700">
+                  {item.needsAttention === "amount_mismatch"
+                    ? `captured ${(item?.attentionDetails?.capturedPaise ?? 0) / 100} vs quote ${(item?.attentionDetails?.expectedPaise ?? 0) / 100}`
+                    : "dates taken during payment"}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-red-800">
+            Cancel the booking from its row to refund the guest, or ask the team
+            to resolve it with &quot;keep&quot; once the dates are free. Nothing
+            is refunded automatically.
+          </p>
         </div>
       )}
       <div className="md:flex items-center justify-between space-y-2">
