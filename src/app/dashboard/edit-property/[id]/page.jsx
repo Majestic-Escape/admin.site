@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 
 import { toast } from "sonner";
 import axios from "axios";
+import { adminAuthHeaders } from "@/lib/admin-token";
 import { PropertyType } from "./component/property-type";
 import { PlaceType } from "./component/place-type";
 import { Location } from "./component/address";
@@ -69,6 +70,7 @@ const EditPropertyPage = () => {
       const response = await axios.put(
         `${API_BASE_URL}/properties/admin-update-property/${id}`,
         propertyData,
+        { headers: adminAuthHeaders() },
       );
       return response.data;
     } catch (error) {

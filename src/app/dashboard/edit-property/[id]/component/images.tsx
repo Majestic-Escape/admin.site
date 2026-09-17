@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import { adminAuthHeaders } from "@/lib/admin-token";
 import {
   Accordion,
   AccordionContent,
@@ -162,7 +163,7 @@ export function Images({ updateFormData, formData }: MakeItStandOutProps) {
       console.log("Formdat", formData);
       console.log("Making backend call");
       const res = await axios.post(`${API_BASE_URL}/uploads/`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { "Content-Type": "multipart/form-data", ...adminAuthHeaders() },
       });
 
       console.log("Fetch data from backend");
@@ -199,6 +200,7 @@ export function Images({ updateFormData, formData }: MakeItStandOutProps) {
   const removePhoto = async (id: string, url: string) => {
     await axios.delete(`${API_BASE_URL}/uploads/delete`, {
       data: { url },
+      headers: adminAuthHeaders(),
     });
 
     const updatedPhotos = photos.filter((photo) => photo.id !== id);
