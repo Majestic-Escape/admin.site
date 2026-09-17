@@ -6,7 +6,14 @@ import { Check, ChevronRight, Circle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const DropdownMenu = DropdownMenuPrimitive.Root
+// Non-modal by default: Radix's modal mode locks page scroll while a menu is
+// open (overflow hidden + a padding-right the width of the scrollbar on
+// <body>), which left a white strip down the right edge under the fixed
+// header and hero. A dropdown has no need to lock the page; a caller that
+// really wants that can still pass modal.
+const DropdownMenu = ({ modal = false, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) => (
+  <DropdownMenuPrimitive.Root modal={modal} {...props} />
+)
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
 
