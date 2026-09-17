@@ -275,6 +275,7 @@ export default function BookingsPage() {
     await queryClient.invalidateQueries({
       queryKey: queryKeys.adminBookingsAll,
     });
+    queryClient.invalidateQueries({ queryKey: queryKeys.adminAttention });
     if (changedBookingId) {
       queryClient.invalidateQueries({
         queryKey: queryKeys.bookingById(changedBookingId),
@@ -453,6 +454,33 @@ export default function BookingsPage() {
     }
   };
 
+  // Operational queue (Batch S.1): paid bookings the server could not honour
+  // as-is (dates taken during payment, or a captured amount that is not the
+  // server quote). Money is never refunded automatically — someone here
+  // decides. Same LIVE freshness as the table; cancelling via "Cancel" on
+  // the row refunds and clears the item.
+  const { data: attentionResult } = useQuery({
+    queryKey: queryKeys.adminAttention,
+    queryFn: async () => {
+      let token = null;
+      try {
+        const raw = localStorage.getItem("token");
+        token = raw ? JSON.parse(raw) : null;
+      } catch {
+        token = null;
+      }
+      if (!token) return [];
+      const response = await fetch(`${API_URL}/booking/admin/attention`, {
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error(`Failed to fetch the attention queue (status: ${response.status})`);
+      const result = await response.json().catch(() => ({}));
+      return Array.isArray(result?.data) ? result.data : [];
+    },
+    ...LIVE,
+  });
+  const attentionItems = attentionResult ?? [];
+
   const renderBookingTable = (bookings) => {
     if (bookingsPending) {
       // Skeleton UI for the table structure
@@ -604,6 +632,18 @@ export default function BookingsPage() {
                 <TableCell>{booking?.price}</TableCell>
                 <TableCell>
                   <StatusPill status={booking?.status} />
+                  {booking?.needsAttention && (
+                    <span
+                      className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800"
+                      title={
+                        booking.needsAttention === "amount_mismatch"
+                          ? "Captured amount differs from the server quote"
+                          : "Dates were taken before the payment completed"
+                      }
+                    >
+                      Needs attention
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -962,6 +1002,45 @@ export default function BookingsPage() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {attentionItems.length > 0 && (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-900"
+        >
+          <p className="font-semibold">
+            {attentionItems.length === 1
+              ? "1 paid booking needs a decision"
+              : `${attentionItems.length} paid bookings need a decision`}
+          </p>
+          <ul className="mt-2 space-y-1">
+            {attentionItems.map((item) => (
+              <li key={item._id}>
+                <button
+                  type="button"
+                  className="underline underline-offset-2"
+                  onClick={() =>
+                    router.push(`/dashboard/booking-details?booking=${item._id}`)
+                  }
+                >
+                  {item?.propertyId?.title ?? "Listing"} —{" "}
+                  {item?.userId?.firstName ?? "guest"},{" "}
+                  {new Date(item?.checkIn).toDateString().slice(4)}
+                </button>
+                <span className="ml-2 text-red-700">
+                  {item.needsAttention === "amount_mismatch"
+                    ? `captured ${(item?.attentionDetails?.capturedPaise ?? 0) / 100} vs quote ${(item?.attentionDetails?.expectedPaise ?? 0) / 100}`
+                    : "dates taken during payment"}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-red-800">
+            Cancel the booking from its row to refund the guest, or ask the team
+            to resolve it with &quot;keep&quot; once the dates are free. Nothing
+            is refunded automatically.
+          </p>
         </div>
       )}
       <div className="md:flex items-center justify-between space-y-2">

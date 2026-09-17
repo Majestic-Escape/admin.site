@@ -9,6 +9,7 @@ export const queryKeys = {
   adminListingsAll: ["adminListings"] as const,
   adminBookings: (filters: unknown) => ["adminBookings", filters] as const,
   adminBookingsAll: ["adminBookings"] as const,
+  adminAttention: ["adminAttention"] as const,
   adminGuests: (filters: unknown) => ["adminGuests", filters] as const,
   adminGuestsAll: ["adminGuests"] as const,
   property: (id: Id) => ["property", id] as const,
