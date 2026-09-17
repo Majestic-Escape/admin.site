@@ -27,15 +27,11 @@ import {
   Settings,
   HelpCircle,
 } from "lucide-react";
+import { isSectionActive } from "@/lib/nav-active";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const isActive = (href: string) => {
-    if (href === "/dashboard") {
-      return pathname === href;
-    }
-    return pathname.startsWith(href);
-  };
+  const isActive = (href: string) => isSectionActive(pathname, href);
 
   const activeClass = "bg-primaryGreen  text-white hover:bg-brightGreen";
   //bg-primary/10 text-primary font-medium";
