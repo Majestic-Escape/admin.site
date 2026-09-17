@@ -59,20 +59,10 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GuestTableSkeleton } from "./guest-table-skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function HostsPage() {
   const [selectedFilters, setSelectedFilters] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [deleteHostId, setDeleteHostId] = React.useState(null);
-  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
   const [guests, setHosts] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
@@ -98,30 +88,8 @@ export default function HostsPage() {
       });
   }, []);
 
-  const handleConfirmDelete = async () => {
-    if (deleteHostId) {
-      try {
-        const res = await fetch(`${API_URL}/guests/delete/${deleteHostId}`, {
-          method: "DELETE",
-          headers: authHeaders(),
-        });
-        if (!res.ok) throw new Error("Failed to delete host");
-        setHosts((prev) => prev.filter((guest) => guest.id !== deleteHostId));
-      } catch (err) {
-        if (process.env.NEXT_PUBLIC_ENV === "dev") {
-          console.log(err);
-        }
-        alert("Failed to delete guest.");
-      }
-      setShowDeleteDialog(false);
-      setDeleteHostId(null);
-    }
-  };
-
-  const handleDeleteClick = (guestId) => {
-    setDeleteHostId(guestId);
-    setShowDeleteDialog(true);
-  };
+  // The account-delete action was removed (Batch A2): the backend has no
+  // cascading user deletion and this page is not linked from the sidebar.
 
   const handleToggleBan = async (guestId, currentStatus) => {
     try {
@@ -386,12 +354,6 @@ export default function HostsPage() {
 
                           <TableCell>
                             <Button
-                              onClick={() => handleDeleteClick(guest.id)}
-                              variant="danger"
-                            >
-                              Delete
-                            </Button>
-                            <Button
                               size="sm"
                               variant="outline"
                               className="ml-2 bg-white text-red-500 border border-red-500"
@@ -440,31 +402,6 @@ export default function HostsPage() {
                   </div>
                 </>
               )}
-              <Dialog
-                open={showDeleteDialog}
-                onOpenChange={setShowDeleteDialog}
-              >
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Confirm guest deletion</DialogTitle>
-                    <DialogDescription>
-                      Are you sure you want to delete this guest? This action
-                      cannot be undone.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowDeleteDialog(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button variant="destructive" onClick={handleConfirmDelete}>
-                      Delete
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             </CardContent>
           </Card>
         </TabsContent>

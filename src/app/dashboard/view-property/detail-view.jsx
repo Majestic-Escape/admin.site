@@ -10,6 +10,7 @@ import DialogModal from "../../../components/dialog-modal";
 import { propertyService } from "../../../services/propertyListingService";
 import { Button } from "@/components/ui/button";
 import { toast, Toaster } from "sonner";
+import DeletePendingListingDialog, { isPendingListing } from "@/components/delete-pending-listing-dialog";
 // import PropertyListing from "./components/property-listing";
 // import Location from "./components/location";
 // import ThingsToKnow from "./components/things-to-know";
@@ -70,7 +71,7 @@ export default function DetailView() {
     queryClient.invalidateQueries({ queryKey: queryKeys.adminListingsAll });
   };
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
-  // const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [delistDialogOpen, setDelistDialogOpen] = useState(false);
   if (process.env.NEXT_PUBLIC_ENV === "dev") {
     console.log("id", propertyId);
@@ -152,18 +153,18 @@ export default function DetailView() {
           refetchHost();
         }}
       />
-      {/* <DialogModal
-        choice={"Delete"}
+      <DeletePendingListingDialog
+        listings={propertyData && deleteDialogOpen ? [{ _id: propertyId, title: propertyData.title, hostEmail: propertyData.hostEmail, status: propertyData.status }] : []}
         open={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
+        onOpenChange={setDeleteDialogOpen}
+        onFinished={(results) => {
+          if (results.deleted.length) {
+            queryClient.removeQueries({ queryKey: queryKeys.property(propertyId) });
+            queryClient.invalidateQueries({ queryKey: queryKeys.adminListingsAll });
+            router.replace("/dashboard/properties");
+          }
         }}
-        onConfirm={async () => {
-          await propertyService.handleConfirmDelete(propertyId);
-          setDeleteDialogOpen(false);
-          router.push("/dashboard/properties");
-        }}
-      /> */}
+      />
       <DialogModal
         choice={"Delist"}
         open={delistDialogOpen}
@@ -196,13 +197,14 @@ export default function DetailView() {
                   Approve
                 </Button>
               ) : null}
-              {/* <Button
-                className="mr-4"
-                onClick={() => setDeleteDialogOpen(true)}
-                variant="destructive"
-              >
-                Delete
-              </Button> */}
+              {isPendingListing(propertyData) ? (
+                <Button
+                  className="mr-4 bg-red-600 text-white hover:bg-red-700"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  Delete
+                </Button>
+              ) : null}
               {propertyData?.status == "active" ? (
                 <Button
                   variant="outline"
