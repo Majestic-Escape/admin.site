@@ -35,6 +35,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 import { Button } from "@/components/ui/button";
 import { useRouter, usePathname } from "next/navigation";
+import { isSectionActive } from "@/lib/nav-active";
 const navItems = [
   { name: "Home", icon: LayoutDashboard, href: "/dashboard" },
   { name: "Property", icon: Building2, href: "/dashboard/properties" },
@@ -49,8 +50,7 @@ export default function AdminBottomNavigation() {
   // the active highlight never rendered on load and was lost on every refresh
   // or back-navigation. Matches the isActive() helper in sidebar.tsx.
   const pathname = usePathname();
-  const isActive = (href: string) =>
-    href === "/dashboard" ? pathname === href : pathname.startsWith(href);
+  const isActive = (href: string) => isSectionActive(pathname, href);
 
   const router = useRouter();
   const handleLogout = () => {
