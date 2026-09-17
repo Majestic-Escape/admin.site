@@ -14,4 +14,6 @@ export const queryKeys = {
   adminGuestsAll: ["adminGuests"] as const,
   property: (id: Id) => ["property", id] as const,
   bookingById: (bookingId: Id) => ["bookingId", bookingId] as const,
+  adminKyc: (hostId: Id) => ["adminKyc", hostId] as const,
+  adminKycDocuments: (hostId: Id) => ["adminKycDocuments", hostId] as const,
 };
