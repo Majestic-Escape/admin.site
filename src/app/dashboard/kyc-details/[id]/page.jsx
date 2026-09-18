@@ -6,6 +6,8 @@
 // photo lightbox, PDFs in an iframe) and never given a public URL. At most
 // two previews are kept alive; everything is revoked on unmount.
 import * as React from "react";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -227,8 +229,17 @@ export default function KycDetailsPage() {
 
   return (
     <div className="flex-1 min-h-screen space-y-4 bg-gray-200 p-4 pt-6 md:p-8">
-      <div className="flex min items-center justify-between space-y-2">
-        <h2 className="text-3xl font-semibold tracking-tight font-bricolage">Kyc Details</h2>
+      <div className="space-y-2">
+        {/* KYC details is a Users page: the Users section stays highlighted
+            (lib/nav-active) and this link is the way back to the list. */}
+        <Link
+          href="/dashboard/guests"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Back to Users
+        </Link>
+        <h2 className="text-3xl font-semibold tracking-tight font-bricolage">KYC Details</h2>
       </div>
       <div className="space-y-4">
         <Card className="col-span-4">
