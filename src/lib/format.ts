@@ -206,3 +206,11 @@ export function formatTime12h(value: unknown, fallback = "—"): string {
   const h12 = hour % 12 === 0 ? 12 : hour % 12;
   return `${h12}:${String(minute).padStart(2, "0")} ${period}`;
 }
+
+// Dates sent to the API as query parameters must be M/D/YYYY (the backend's
+// parseMDYToUTC); toLocaleDateString() is D/M/YYYY in en-IN / en-GB browsers,
+// which made these lists come back empty for most admins.
+export function apiDate(d: Date): string {
+  const x = d instanceof Date ? d : new Date(d);
+  return `${x.getMonth() + 1}/${x.getDate()}/${x.getFullYear()}`;
+}

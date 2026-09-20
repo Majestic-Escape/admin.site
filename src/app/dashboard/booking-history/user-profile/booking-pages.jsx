@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { apiDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -97,8 +98,8 @@ export default function ProfilePage() {
     const getLocalData = await localStorage.getItem("token");
     const data = JSON.parse(getLocalData);
 
-    const from = date?.from ? new Date(date.from).toLocaleDateString() : "";
-    const to = date?.to ? new Date(date.to).toLocaleDateString() : "";
+    const from = date?.from ? apiDate(new Date(date.from)) : "";
+    const to = date?.to ? apiDate(new Date(date.to)) : "";
 
     if (data) {
       try {

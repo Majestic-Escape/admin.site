@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { apiDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -124,8 +125,8 @@ export default function BookingsPage() {
     console.log("print", data);
     // const from = date?.from ? new Date(date.from).toLocaleDateString() : null;
     // const to = date?.to ? new Date(date.to).toLocaleDateString() : null;
-    const from = date.from ? date.from.toLocaleDateString() : null;
-    const to = date.to ? date.to.toLocaleDateString() : null;
+    const from = date.from ? apiDate(date.from) : null;
+    const to = date.to ? apiDate(date.to) : null;
     if (process.env.NEXT_PUBLIC_ENV === "dev") {
       console.log("here", from);
     }
