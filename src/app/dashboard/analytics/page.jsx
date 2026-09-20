@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { DataTableEmpty, DataTablePagination } from "@/components/data-table";
 import { addDays, subMonths, format, subDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,7 @@ import {
 } from "recharts";
 
 import { useEffect } from "react";
-import { formatDate, formatINR, parseFiniteNumber } from "@/lib/format";
+import { apiDate, formatDate, formatINR, parseFiniteNumber } from "@/lib/format";
 
 // Counts are summed only when they are real numbers (a missing `guests`
 // used to turn every total into NaN).
@@ -172,28 +173,27 @@ const AnalyticsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [hostSearch, setHostSearch] = useState("");
   const [currentHost, setCurrentHost] = useState("all");
-  const getDate = (item) => {
-    const month = new Date(item).getMonth();
-    const year = new Date(item).getFullYear();
-    const day = new Date(item).getDate();
-    const newDate = new Date(Date.UTC(year, month, day));
-    return newDate.toISOString();
-  };
+  // the Recent Bookings table pages client-side over the range already loaded for the charts
+  const [tablePage, setTablePage] = useState(1);
+  const [tablePageSize, setTablePageSize] = useState(10);
 
   const fetchData = async () => {
     const getLocalData = await localStorage.getItem("token");
     const data = JSON.parse(getLocalData);
     const host = await localStorage.getItem("userId");
 
-    const from = getDate(dateRange.from);
-    const to = getDate(dateRange.to);
+    // M/D/YYYY like every other dashboard date filter (the API parses calendar days)
+    const from = dateRange?.from ? apiDate(dateRange.from) : "";
+    const to = dateRange?.to ? apiDate(dateRange.to) : "";
     if (process.env.NEXT_PUBLIC_ENV === "dev") {
       console.log(from, to);
     }
     if (data) {
       try {
+        // the charts need every booking of the range (limit=0 = unbounded; the
+        // endpoint used to default to 10 rows, so the charts covered 10 bookings)
         const response = await fetch(
-          `${API_URL}/booking/admin/analytics-filter?search=${searchTerm}&status=${status}&from=${from}&to=${to}&hostEmail=${currentHost}`,
+          `${API_URL}/booking/admin/analytics-filter?search=${encodeURIComponent(searchTerm)}&status=${status}&from=${from}&to=${to}&hostEmail=${currentHost}&limit=0&sort=checkIn:desc`,
           {
             method: "GET",
             headers: {
@@ -204,7 +204,8 @@ const AnalyticsPage = () => {
         );
         const result = await response.json();
         const final = await result.data;
-        setBookings(final);
+        setBookings(Array.isArray(final) ? final : []);
+        setTablePage(1);
       } catch (err) {
         console.error(err);
       }
@@ -853,8 +854,11 @@ const AnalyticsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {bookings?.map((booking) => (
-                <TableRow key={booking?._id}>
+              {bookings && bookings.length === 0 ? (
+                <DataTableEmpty colSpan={8} message="No bookings in this range." />
+              ) : null}
+              {(bookings ?? []).slice((tablePage - 1) * tablePageSize, tablePage * tablePageSize).map((booking) => (
+                <TableRow key={booking?._id} data-testid="analytics-row">
                   <TableCell>
                     <span title={booking?.propertyId?.title}>
                       {checkLength(booking?.propertyId?.title)}
@@ -890,6 +894,14 @@ const AnalyticsPage = () => {
               ))}
             </TableBody>
           </Table>
+          <DataTablePagination
+            page={tablePage}
+            pageSize={tablePageSize}
+            total={bookings?.length ?? 0}
+            onPageChange={setTablePage}
+            onPageSizeChange={(n) => { setTablePageSize(n); setTablePage(1); }}
+            itemLabel="bookings"
+          />
         </CardContent>
       </Card>
     </div>
