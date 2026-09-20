@@ -18,12 +18,19 @@ import DeletePendingListingDialog, { isPendingListing } from "@/components/delet
 // import ReviewSection from "./components/review-section";
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+// The admin document (exact address and point, owner flags, text as stored):
+// the public /properties/:id answers everyone — admins included — with the
+// approximate point and no street since the contact lock-down, so the
+// moderation map was 150–350 m off.
 const fetchProperty = async (id) => {
   if (process.env.NEXT_PUBLIC_ENV === "dev") {
     console.log("entered");
   }
   if (!id) throw new Error("Property ID is missing");
-  const response = await fetch(`${API_URL}/properties/${id}`);
+  const token = JSON.parse(localStorage.getItem("token"));
+  const response = await fetch(`${API_URL}/prop-listing/admin/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   if (!response.ok) {
     throw new Error(
       `Failed to fetch property data (status: ${response.status})`

@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { DataTableEmpty, DataTablePagination, DataTableSearch, SortableHeader, useListParams } from "@/components/data-table";
+const LISTING_FILTERS = { q: "", status: "all" };
 import axios from "axios";
 import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import { ChevronDown, MoreHorizontal, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -24,7 +24,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -110,20 +109,14 @@ const StatusKyc = ({ data }) => {
   );
 };
 // -------------- API Helpers -----------------
-const getFilteredListings = async (
-  searchTerm,
-  statusFilter,
-  page = 1,
-  limit = 10,
-) => {
+const getFilteredListings = async (query) => {
   const getLocalData = await localStorage.getItem("token");
   const data = JSON.parse(getLocalData);
   if (data) {
     try {
       const response = await axios.get(
-        `${API_URL}/properties/admin/filtered-listings?search=${searchTerm}&status=${statusFilter}`,
+        `${API_URL}/properties/admin/filtered-listings?${query}`,
         {
-          params: { page, limit },
           headers: {
             Authorization: `Bearer ${data}`,
             "Content-Type": "application/json",
@@ -234,14 +227,21 @@ export function ListingsTable() {
   const [listingToApprove, setListingToApprove] = useState(null);
   const [listingToDelist, setListingToDelist] = useState(null);
   const [delistDialogOpen, setDelistDialogOpen] = useState(false);
-  const [page, setPage] = useState(1);
   const [imagePopupOpen, setImagePopupOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const [selectedPropertyName, setSelectedPropertyName] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
   const [bulk, setBulk] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("all"); // State to track the selected status filter
   const [listingsToday] = useState(0);
+  // page / size / sort / search / status live in the URL (server-side contract)
+  const list = useListParams({ defaultSort: "updatedAt:desc", filters: LISTING_FILTERS });
+  const { q: searchTerm, status: statusFilter } = list.filters;
+  const page = list.page;
+  const listQuery = React.useMemo(() => {
+    const p = new URLSearchParams(list.apiParams);
+    p.set("search", searchTerm);
+    p.set("status", statusFilter);
+    return p.toString();
+  }, [list.apiParams, searchTerm, statusFilter]);
 
   // Cached per filter set; page/filter changes keep the previous rows on
   // screen (dimmed). Approve/delist invalidate adminListingsAll after the
@@ -254,18 +254,14 @@ export function ListingsTable() {
     isFetching,
     error: listingsError,
   } = useQuery({
-    queryKey: queryKeys.adminListings({ searchTerm, statusFilter, page }),
+    queryKey: queryKeys.adminListings(listQuery),
     queryFn: async () => {
-      const response = await getFilteredListings(
-        searchTerm,
-        statusFilter,
-        page,
-        10,
-      );
+      const response = await getFilteredListings(listQuery);
       return {
         properties: Array.isArray(response?.properties)
           ? response.properties
           : [],
+        total: response?.total ?? response?.totalProperties ?? 0,
         totalList: response?.totalList ?? 0,
         totalActiveListings: response?.totalActiveListings ?? 0,
         totalProcessingListings: response?.totalProcessingListings ?? 0,
@@ -276,6 +272,7 @@ export function ListingsTable() {
   });
   const data = listingsResult?.properties ?? [];
   const totalListings = listingsResult?.totalList ?? 0;
+  const filteredTotal = listingsResult?.total ?? 0;
   const totalActiveListings = listingsResult?.totalActiveListings ?? 0;
   const totalPendingListings = listingsResult?.totalProcessingListings ?? 0;
   useEffect(() => {
@@ -297,9 +294,7 @@ export function ListingsTable() {
   );
 
   // Handle status filter change
-  const handleStatusChange = (value) => {
-    setStatusFilter(value); // Update filter state when a new status is selected
-  };
+  const handleStatusChange = (value) => list.setFilter("status", value);
 
   const handleImageClick = useCallback((images, propertyName) => {
     setSelectedImages(images);
@@ -357,7 +352,7 @@ export function ListingsTable() {
   const handleBulkDeleteClick = () => {
     const selected = table.getSelectedRowModel().rows.map((r) => r.original);
     const pendingRows = selected.filter(isPendingListing);
-    if (!pendingRows.length) return toast.error("No pending listings selected");
+    if (!pendingRows.length) return toast.error("No pending or draft listings selected");
     setDeleteQueue({ listings: pendingRows, skipped: selected.length - pendingRows.length });
   };
 
@@ -487,19 +482,7 @@ export function ListingsTable() {
       },
       {
         accessorKey: "title",
-        header: ({ column }) => {
-          return (
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-            >
-              Title
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          );
-        },
+        header: () => <SortableHeader label="Title" sortKey="title" sort={list} onSort={list.toggleSort} />,
         cell: ({ row }) => {
           const title = row.getValue("title") || "";
           const truncated =
@@ -517,51 +500,45 @@ export function ListingsTable() {
       },
       {
         accessorKey: "propertyType",
-        header: "Property Type",
+        header: () => <SortableHeader label="Property Type" sortKey="propertyType" sort={list} onSort={list.toggleSort} />,
       },
       {
-        header: "KYC Status",
-        cell: ({ row }) => {
-          const listing = row.original; // Access actual data
-          console.log("r", listing);
-          return <StatusKyc data={listing?.host?.kyc} />;
-        },
+        id: "kyc",
+        header: () => <SortableHeader label="KYC Status" sortKey="hostKyc" sort={list} onSort={list.toggleSort} />,
+        cell: ({ row }) => <StatusKyc data={row.original?.host?.kyc} />,
       },
       {
-        header: "Bank Details",
-        cell: ({ row }) => {
-          const listing = row.original; // Access actual data
-          console.log("r", listing);
-          return <StatusKyc data={listing?.host?.bank} />;
-        },
+        id: "bank",
+        header: () => <SortableHeader label="Bank Details" sortKey="hostBank" sort={list} onSort={list.toggleSort} />,
+        cell: ({ row }) => <StatusKyc data={row.original?.host?.bank} />,
       },
       {
         accessorKey: "hostEmail",
-        header: "Email",
+        header: () => <SortableHeader label="Email" sortKey="hostEmail" sort={list} onSort={list.toggleSort} />,
       },
       {
         accessorKey: "placeType",
-        header: "Place Type",
+        header: () => <SortableHeader label="Place Type" sortKey="placeType" sort={list} onSort={list.toggleSort} />,
       },
       {
         accessorKey: "guests",
-        header: "Guests",
+        header: () => <SortableHeader label="Guests" sortKey="guests" sort={list} onSort={list.toggleSort} />,
       },
       {
         accessorKey: "bedrooms",
-        header: "Bedrooms",
+        header: () => <SortableHeader label="Bedrooms" sortKey="bedrooms" sort={list} onSort={list.toggleSort} />,
       },
       {
         accessorKey: "beds",
-        header: "Beds",
+        header: () => <SortableHeader label="Beds" sortKey="beds" sort={list} onSort={list.toggleSort} />,
       },
       {
         accessorKey: "bathrooms",
-        header: "Bathrooms",
+        header: () => <SortableHeader label="Bathrooms" sortKey="bathrooms" sort={list} onSort={list.toggleSort} />,
       },
       {
         accessorKey: "basePrice",
-        header: () => <div className="text-right">Base Price</div>,
+        header: () => <div className="text-right"><SortableHeader label="Base Price" sortKey="basePrice" sort={list} onSort={list.toggleSort} align="right" /></div>,
         cell: ({ row }) => {
           const price = row.getValue("basePrice");
 
@@ -582,37 +559,12 @@ export function ListingsTable() {
 
       {
         accessorKey: "status",
-        header: ({ column }) => {
-          return (
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-            >
-              Status
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          );
-        },
+        header: () => <SortableHeader label="Status" sortKey="status" sort={list} onSort={list.toggleSort} />,
         cell: ({ row }) => <StatusPill status={row.getValue("status")} />,
       },
       {
         accessorKey: "createdAt",
-
-        header: ({ column }) => {
-          return (
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-            >
-              Created At
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          );
-        },
+        header: () => <SortableHeader label="Created At" sortKey="createdAt" sort={list} onSort={list.toggleSort} />,
         cell: ({ row }) => (
           <div className="text-center">
             {new Date(row.getValue("createdAt")).toLocaleDateString()}
@@ -709,7 +661,7 @@ export function ListingsTable() {
         },
       },
     ],
-    [handleImageClick, handleApproveListing, handleDelisting, handleDeleteClick],
+    [handleImageClick, handleApproveListing, handleDelisting, handleDeleteClick, list.sortKey, list.sortDir, list.toggleSort],
   );
 
   const table = useReactTable({
@@ -721,9 +673,10 @@ export function ListingsTable() {
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    // the server pages and sorts (utils/listQuery.js); the table only renders one page
+    manualPagination: true,
+    manualSorting: true,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     state: {
@@ -734,9 +687,6 @@ export function ListingsTable() {
     },
   });
 
-  const handlePageChange = useCallback((newPage) => {
-    setPage(newPage);
-  }, []);
   // A new search / filter / page shows different rows: start the selection
   // over so bulk actions only ever apply to what is on screen.
   useEffect(() => {
@@ -859,32 +809,41 @@ export function ListingsTable() {
       </div>
 
       {/* ----------- FILTERS & COLUMN VISIBILITY ----------- */}
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Search using title or email..."
+      <div className="flex flex-col gap-2 py-4 md:flex-row md:items-center">
+        <DataTableSearch
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm bg-white rounded-md"
+          onChange={(v) => list.setFilter("q", v)}
+          placeholder="Search using title or email..."
+          className="bg-white rounded-md"
         />
         <Select
           className="bg-white rounded-md"
           value={statusFilter}
           onValueChange={handleStatusChange}
         >
-          <SelectTrigger className="bg-white w-[180px] ml-2">
+          <SelectTrigger className="bg-white w-[180px] md:ml-2" aria-label="Status" data-testid="filter-status">
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="processing">Pending</SelectItem>
-            {/* <SelectItem value="incomplete">Incomplete</SelectItem> */}
+            <SelectItem value="incomplete">Incomplete (drafts)</SelectItem>
             <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
+        {list.isDirty ? (
+          <Button variant="ghost" size="sm" className="h-9" onClick={list.reset} data-testid="table-reset">
+            <X className="mr-1 h-4 w-4" aria-hidden="true" />
+            Reset
+          </Button>
+        ) : null}
+        <span className="text-sm text-muted-foreground md:ml-auto" data-testid="table-count">
+          {loading ? "" : `${filteredTotal} ${filteredTotal === 1 ? "listing" : "listings"}`}
+        </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline" className="md:ml-2 bg-white">
               Columns <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -940,7 +899,7 @@ export function ListingsTable() {
                 onClick={handleBulkDeleteClick}
                 className="text-white bg-red-600 hover:bg-red-700"
               >
-                Delete pending ({pendingSelectedCount})
+                Delete pending / drafts ({pendingSelectedCount})
               </Button>
             ) : null}
           </div>
@@ -1007,46 +966,26 @@ export function ListingsTable() {
                 </TableRow>
               ))
             ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
+              <DataTableEmpty colSpan={columns.length} message="No listings match these filters." onReset={list.isDirty ? list.reset : undefined} />
             )}
           </TableBody>
         </Table>
       </div>
 
       {/* ----------- PAGINATION ----------- */}
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
-        <div className="space-x-2">
-          <Button
-            className="bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(Math.max(page - 1, 1))}
-            disabled={page === 1 || loading}
-          >
-            Previous
-          </Button>
-          <Button
-            className="bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(page + 1)}
-            disabled={data?.length < 10 || loading}
-          >
-            Next
-          </Button>
-        </div>
+      <div className="py-2 text-sm text-muted-foreground">
+        {table.getFilteredSelectedRowModel().rows.length} of{" "}
+        {table.getFilteredRowModel().rows.length} row(s) on this page selected.
       </div>
+      <DataTablePagination
+        page={list.page}
+        pageSize={list.pageSize}
+        total={filteredTotal}
+        onPageChange={list.setPage}
+        onPageSizeChange={list.setPageSize}
+        isLoading={isFetching}
+        itemLabel="listings"
+      />
     </div>
   );
 }
