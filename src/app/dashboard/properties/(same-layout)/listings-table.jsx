@@ -352,7 +352,7 @@ export function ListingsTable() {
   const handleBulkDeleteClick = () => {
     const selected = table.getSelectedRowModel().rows.map((r) => r.original);
     const pendingRows = selected.filter(isPendingListing);
-    if (!pendingRows.length) return toast.error("No pending listings selected");
+    if (!pendingRows.length) return toast.error("No pending or draft listings selected");
     setDeleteQueue({ listings: pendingRows, skipped: selected.length - pendingRows.length });
   };
 
@@ -828,7 +828,7 @@ export function ListingsTable() {
             <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="processing">Pending</SelectItem>
-            {/* <SelectItem value="incomplete">Incomplete</SelectItem> */}
+            <SelectItem value="incomplete">Incomplete (drafts)</SelectItem>
             <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
@@ -899,7 +899,7 @@ export function ListingsTable() {
                 onClick={handleBulkDeleteClick}
                 className="text-white bg-red-600 hover:bg-red-700"
               >
-                Delete pending ({pendingSelectedCount})
+                Delete pending / drafts ({pendingSelectedCount})
               </Button>
             ) : null}
           </div>
