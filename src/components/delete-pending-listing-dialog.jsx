@@ -18,8 +18,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { deletePendingListing } from "@/lib/admin-api";
 
+// Pending submissions and abandoned drafts can be deleted; live / delisted
+// listings are delisted instead (the server enforces the same rule).
 export function isPendingListing(listing) {
-  return listing?.status === "processing";
+  return listing?.status === "processing" || listing?.status === "incomplete";
 }
 
 function photoNote(data) {
@@ -71,8 +73,8 @@ export default function DeletePendingListingDialog({ listings, skipped = 0, open
         toast.error(results.failed[0]?.message || "Deletion failed");
       }
     } else {
-      const parts = [`Deleted ${results.deleted.length} pending listing${results.deleted.length === 1 ? "" : "s"}.`];
-      if (skipped) parts.push(`${skipped} skipped (not pending).`);
+      const parts = [`Deleted ${results.deleted.length} listing${results.deleted.length === 1 ? "" : "s"}.`];
+      if (skipped) parts.push(`${skipped} skipped (live or delisted).`);
       if (results.failed.length) parts.push(`${results.failed.length} failed: ${results.failed[0].message}`);
       if (results.photosFailed) parts.push(`${results.photosFailed} photo${results.photosFailed === 1 ? "" : "s"} logged for cleanup.`);
       (results.failed.length && !results.deleted.length ? toast.error : toast.success)(parts.join(" "));
@@ -84,7 +86,7 @@ export default function DeletePendingListingDialog({ listings, skipped = 0, open
     <AlertDialog open={open} onOpenChange={(value) => !running && onOpenChange(value)}>
       <AlertDialogContent className="w-[calc(100%-2rem)] max-w-lg rounded-lg">
         <AlertDialogHeader>
-          <AlertDialogTitle>{single ? "Delete pending listing?" : `Delete ${items.length} pending listings?`}</AlertDialogTitle>
+          <AlertDialogTitle>{single ? (items[0]?.status === "incomplete" ? "Delete draft listing?" : "Delete pending listing?") : `Delete ${items.length} listings?`}</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3 text-sm text-muted-foreground">
               {single ? (
@@ -104,7 +106,7 @@ export default function DeletePendingListingDialog({ listings, skipped = 0, open
               )}
               {skipped ? (
                 <p>
-                  {skipped} selected listing{skipped === 1 ? " is" : "s are"} not pending and will be skipped.
+                  {skipped} selected listing{skipped === 1 ? " is" : "s are"} live or delisted and will be skipped.
                 </p>
               ) : null}
               <p>
