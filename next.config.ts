@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // The admin is an internal tool: its thumbnails and photo galleries are
+    // served straight from Spaces. Vercel image transformations are a shared
+    // account quota; the admin was spending it (and, once exhausted, every
+    // uncached admin image answered 402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED).
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
