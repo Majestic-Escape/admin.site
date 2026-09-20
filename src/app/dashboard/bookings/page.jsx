@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { apiDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -135,10 +136,10 @@ export default function BookingsPage() {
     const data = JSON.parse(getLocalData);
 
     const from = modalDate?.from
-      ? new Date(modalDate.from).toLocaleDateString()
+      ? apiDate(new Date(modalDate.from))
       : null;
     const to = modalDate?.to
-      ? new Date(modalDate.to).toLocaleDateString()
+      ? apiDate(new Date(modalDate.to))
       : null;
     if (process.env.NEXT_PUBLIC_ENV === "dev") {
       console.log("here", from);
@@ -216,8 +217,8 @@ export default function BookingsPage() {
   // revalidate; filter/page changes keep the previous rows (dimmed) instead
   // of a skeleton. Modify/cancel invalidate adminBookingsAll after the 2xx.
   const queryClient = useQueryClient();
-  const from = date?.from ? date.from.toLocaleDateString() : null;
-  const to = date?.to ? date.to.toLocaleDateString() : null;
+  const from = date?.from ? apiDate(date.from) : null;
+  const to = date?.to ? apiDate(date.to) : null;
   const filters = { searchTerm, activeTab, from, to, rowsPerPage, skip };
   const {
     data: bookingsResult,

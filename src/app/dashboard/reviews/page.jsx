@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { apiDate } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,9 +132,9 @@ const ReviewsPage = () => {
     try {
       const getUserId = await localStorage.getItem("userId");
       const userId = JSON.parse(getUserId);
-      const from = date.from ? new Date(date.from).toLocaleDateString() : "";
+      const from = date.from ? apiDate(new Date(date.from)) : "";
 
-      const to = date.to ? new Date(date.to).toLocaleDateString() : "";
+      const to = date.to ? apiDate(new Date(date.to)) : "";
       if (process.env.NEXT_PUBLIC_ENV === "dev") {
         console.log(from, to);
       }
@@ -205,9 +206,9 @@ const ReviewsPage = () => {
     try {
       const getUserId = await localStorage.getItem("userId");
       const userId = JSON.parse(getUserId);
-      const from = date.from ? new Date(date.from).toLocaleDateString() : "";
+      const from = date.from ? apiDate(new Date(date.from)) : "";
 
-      const to = date.to ? new Date(date.to).toLocaleDateString() : "";
+      const to = date.to ? apiDate(new Date(date.to)) : "";
       if (process.env.NEXT_PUBLIC_ENV === "dev") {
         console.log(from, to);
       }
