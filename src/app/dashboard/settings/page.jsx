@@ -1,8 +1,9 @@
 "use client";
 
-// Platform settings. Currently one control: the AI chatbot kill-switch.
+// Platform settings: the homepage banner (./_components, server.me
+// docs/site-hero.md) and the AI chatbot kill-switch.
 //
-// The flag lives in the chat widget service (port 3003 in dev,
+// The chatbot flag lives in the chat widget service (port 3003 in dev,
 // chat.majesticescape.in in prod), not in server.me — same service the support
 // console already talks to. Turning it off stops Gemini/Groq/xAI spend at the
 // source: the widget hides its AI tab, and /api/chat refuses server-side so the
@@ -12,6 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Bot, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { HeroBannerSettings } from "./_components/hero-banner-settings";
 
 const SUPPORT_URL =
   process.env.NEXT_PUBLIC_SUPPORT_SOCKET_URL || "http://localhost:3003";
@@ -105,13 +107,14 @@ export default function SettingsPage() {
   const loading = aiEnabled === null && !loadError;
 
   return (
-    <div className="container py-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">Settings</h1>
-        <p className="text-sm text-gray-600 mb-6">
-          Platform-wide controls. Changes take effect for customers within a few
-          seconds.
-        </p>
+    <div className="container px-4 pt-6 pb-24 sm:px-6 md:pb-10 lg:px-8">
+      <div className="max-w-5xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Settings</h1>
+          <p className="text-sm text-gray-600">
+            Platform-wide controls for the website.
+          </p>
+        </div>
 
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <div className="p-6 sm:p-8">
@@ -187,6 +190,9 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* after the compact kill switch, so it is never buried below the editor */}
+        <HeroBannerSettings />
       </div>
     </div>
   );
