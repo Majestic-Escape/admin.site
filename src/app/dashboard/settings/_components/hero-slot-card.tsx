@@ -120,7 +120,9 @@ export function HeroSlotCard({
   const [pickError, setPickError] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  // The draft the admin was shown when they asked to discard it: that one —
+  // not whichever draft is current when they confirm — is what gets discarded.
+  const [confirmDiscard, setConfirmDiscard] = useState<{ opId: string; stagedBy: string | null; stagedAt: string } | null>(null);
   const pickedUrl = useRef<string | null>(null);
   const busy = ACTIVE.has(op.phase);
 
@@ -279,8 +281,8 @@ export function HeroSlotCard({
                   </ul>
                 )}
                 <div className="pt-1">
-                  <Button type="button" variant="ghost" size="sm" className="-ml-2 text-red-700 hover:bg-red-50 hover:text-red-800" disabled={busy || ACTIVE.has(discardOp.phase)} onClick={() => setConfirmDiscard(true)}>
-                    {ACTIVE.has(discardOp.phase) ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Trash2 aria-hidden="true" />}
+                  <Button type="button" variant="ghost" size="sm" className="-ml-2 text-red-700 hover:bg-red-50 hover:text-red-800" disabled={busy || ACTIVE.has(discardOp.phase)} onClick={() => draft && setConfirmDiscard({ opId: draft.opId, stagedBy: draft.stagedBy, stagedAt: draft.stagedAt })}>
+                    {ACTIVE.has(discardOp.phase) ? <Loader2 className="motion-safe:animate-spin" aria-hidden="true" /> : <Trash2 aria-hidden="true" />}
                     Discard draft
                   </Button>
                 </div>
@@ -346,11 +348,11 @@ export function HeroSlotCard({
               <ImagePlus className="mx-auto h-8 w-8 text-gray-400" aria-hidden="true" />
               <p className="mt-2 text-sm text-gray-700">Drop an image here, paste it, or</p>
               <Button type="button" variant="outline" className="mt-2" disabled={reading || busy} onClick={() => inputRef.current?.click()} aria-describedby={`${ids}-spec`}>
-                {reading ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+                {reading ? <Loader2 className="motion-safe:animate-spin" aria-hidden="true" /> : null}
                 Choose {slot} image
               </Button>
               <p id={`${ids}-spec`} className="mx-auto mt-3 max-w-md text-xs leading-relaxed text-gray-600">
-                Recommended <strong className="font-semibold text-gray-800">{spec.recommended[0]} × {spec.recommended[1]} px</strong> (at least {spec.min[0]} × {spec.min[1]}). JPEG, PNG, WebP or AVIF; no QR codes. Files up to 4 MB are used as they are; larger ones are compressed in your browser first.
+                Recommended <strong className="font-semibold text-gray-800">{spec.recommended[0]} × {spec.recommended[1]} px</strong> (at least {spec.min[0]} × {spec.min[1]}). JPEG, PNG, WebP or AVIF; no QR codes. Files up to 4 MB are uploaded as they are (the server makes the web versions from them); larger ones are compressed in your browser first.
               </p>
             </div>
           )}
@@ -438,7 +440,7 @@ export function HeroSlotCard({
         </div>
       </div>
 
-      <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
+      <AlertDialog open={!!confirmDiscard} onOpenChange={(o) => !o && setConfirmDiscard(null)}>
         <AlertDialogContent
           onCloseAutoFocus={(e) => {
             e.preventDefault(); // the button that opened it may be gone
@@ -447,14 +449,21 @@ export function HeroSlotCard({
         >
           <AlertDialogHeader>
             <AlertDialogTitle>Discard the {slot} draft?</AlertDialogTitle>
-            <AlertDialogDescription>The prepared image is removed. The live banner is not affected.</AlertDialogDescription>
+            <AlertDialogDescription>
+              The image prepared{confirmDiscard?.stagedBy ? ` by ${confirmDiscard.stagedBy}` : ""} {confirmDiscard ? fmtWhen(confirmDiscard.stagedAt) : ""} is removed. The live banner is not affected.
+            </AlertDialogDescription>
+            {confirmDiscard && draft && draft.opId !== confirmDiscard.opId && (
+              <p role="alert" className="text-sm text-amber-800">
+                A newer {slot} draft was prepared while this was open. Only the one you saw is discarded — if it has already been replaced, nothing is removed.
+              </p>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep it</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-700 text-white hover:bg-red-800"
               onClick={() => {
-                if (draft) onDiscard(draft.opId);
+                if (confirmDiscard) onDiscard(confirmDiscard.opId);
               }}
             >
               Discard draft

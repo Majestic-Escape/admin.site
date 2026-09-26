@@ -84,6 +84,23 @@ export function HeroCropEditor({
     }
   };
 
+  // The slider works in whole pixels of the crop's travel (at most 100
+  // steps): every arrow key moves the crop, also when the image is only a
+  // few dozen pixels larger than the box (1% steps would round back).
+  const travelPx = axis === "x" ? width - region.width : axis === "y" ? height - region.height : 0;
+  const offsetPx = axis === "x" ? region.left : axis === "y" ? region.top : 0;
+  const steps = Math.max(1, Math.min(100, travelPx));
+  const sliderValue = travelPx > 0 ? Math.round((offsetPx / travelPx) * steps) : 0;
+  const moveToStep = (v: number) => {
+    const px = Math.round((Math.min(steps, Math.max(0, v)) / steps) * travelPx);
+    const whole = axis === "x" ? width : height;
+    const part = axis === "x" ? region.width : region.height;
+    const centre = (px + part / 2) / whole;
+    onFocalChange(axis === "x" ? { x: centre, y: focal.y } : { x: focal.x, y: centre });
+  };
+  const centred = cropRegion(width, height, slot, { x: 0.5, y: 0.5 });
+  const atCentre = axis === "x" ? region.left === centred.left : axis === "y" ? region.top === centred.top : true;
+
   const pct = Math.round(position * 100);
   const [from, to] = axis === "y" ? ["top", "bottom"] : ["left", "right"];
   const valueText = pct <= 1 ? `At the ${from} edge` : pct >= 99 ? `At the ${to} edge` : pct === 50 ? "Centred" : `${pct}% from the ${from}`;
@@ -150,7 +167,7 @@ export function HeroCropEditor({
             <span id={labelId} className="text-sm font-medium text-gray-900">
               Crop position
             </span>
-            <Button type="button" variant="ghost" size="sm" disabled={disabled || pct === 50} onClick={() => moveTo(0.5)}>
+            <Button type="button" variant="ghost" size="sm" disabled={disabled || atCentre} onClick={() => moveTo(0.5)}>
               Centre
             </Button>
           </div>
@@ -159,12 +176,12 @@ export function HeroCropEditor({
               {from}
             </span>
             <SliderPrimitive.Root
-              value={[pct]}
+              value={[sliderValue]}
               min={0}
-              max={100}
+              max={steps}
               step={1}
               disabled={disabled}
-              onValueChange={([v]) => moveTo(v / 100)}
+              onValueChange={([v]) => moveToStep(v)}
               className="relative flex h-6 w-full touch-none select-none items-center"
             >
               <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-gray-200">

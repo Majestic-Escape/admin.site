@@ -182,7 +182,8 @@ export interface HeroState {
   updatedAt: string | null;
   updatedBy: string | null;
   // where this server keeps banner objects; only production's reach the site
-  environment?: { production: boolean; prefix: string };
+  // namespace: whose banner document this is; writable false = this server may not change it (server.me docs/site-hero.md, Environments)
+  environment?: { production: boolean; prefix: string; namespace?: string | null; writable?: boolean };
 }
 export type HeroNotifyStatus = "ok" | "timeout" | "error" | "skipped" | "mocked" | "unknown";
 export interface HeroMutation {

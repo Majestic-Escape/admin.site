@@ -161,7 +161,11 @@ async function reconcile(opId: string, { unknownLimit, signal, onDetail }: { unk
       unknowns = st.status === "unknown" ? unknowns + 1 : 0;
       if (unknowns >= unknownLimit) return { kind: "unknown" };
     } catch (err) {
-      if (err instanceof ApiError && err.status >= 400 && err.status < 500) return { kind: "failed", error: err };
+      // The lookup itself failed — that says nothing about the change. A
+      // throttled or timed-out lookup is tried again; any other refusal
+      // (signed out, forbidden…) ends the lookup as "not confirmed", never
+      // as a failure of the change.
+      if (err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 408 && err.status !== 429) return { kind: "unconfirmed" };
       detail = "offline";
     }
     if (signal?.aborted) break;
@@ -307,7 +311,10 @@ export function useHeroBanner() {
           // Keep waiting for the answer, and meanwhile ask the server directly.
           const poll = new AbortController();
           const stop = () => poll.abort();
-          alive.current.signal.addEventListener("abort", stop, { once: true });
+          // the page may already have been left (an abort listener added
+          // after the fact never fires)
+          if (alive.current.signal.aborted) poll.abort();
+          else alive.current.signal.addEventListener("abort", stop, { once: true });
           const looked = reconcile(a.opId, { unknownLimit: Infinity, signal: poll.signal, onDetail: (detail) => setOp(a.slot, { phase: "checking", detail }) }).then((r) => ({ reconciled: r }));
           const next = await Promise.race([request, looked]);
           alive.current.signal.removeEventListener("abort", stop);

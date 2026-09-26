@@ -153,6 +153,11 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
   // the version the admin's edit started from: a save is checked against it
   const [altBase, setAltBase] = useState<number | null>(null);
   const [altTouched, setAltTouched] = useState(false);
+  // The banner changed (another admin published, restored or saved a
+  // description) while this description was being edited: their current
+  // description, shown beside the field before anything is sent — never
+  // overwritten silently, and the next Save/Publish starts from it.
+  const [altConflict, setAltConflict] = useState<{ version: number; alt: string } | null>(null);
   const [chosen, setChosen] = useState<Record<HeroSlotName, boolean>>({ desktop: true, mobile: true });
   const [review, setReview] = useState<Review | null>(null);
   const [restoreAt, setRestoreAt] = useState<number | null>(null); // the version the admin saw when asked
@@ -202,6 +207,22 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
     return { desktop: pick("desktop"), mobile: pick("mobile") };
   }, [selected, state]);
 
+  // An edit that started from an older banner: show what is there now, once;
+  // the next attempt starts from the current version.
+  const editStale = () => {
+    if (!altDirty || altBase === state.version) return false;
+    if (altConflict && altConflict.version === state.version) {
+      setAltBase(state.version);
+      return false;
+    }
+    setAltConflict({ version: state.version, alt: state.alt || "" });
+    altRef.current?.focus();
+    return true;
+  };
+  useEffect(() => {
+    if (altDirty && altBase !== state.version) setAltConflict((c) => (c && c.version === state.version ? c : { version: state.version, alt: state.alt || "" }));
+  }, [altDirty, altBase, state.version, state.alt]);
+
   // The dialog shows — and publishes — this snapshot, never later state.
   const startReview = () => {
     setAltTouched(true);
@@ -210,6 +231,7 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
       return;
     }
     if (!canPublish) return;
+    if (editStale()) return;
     const slots: Partial<Record<HeroSlotName, string>> = {};
     for (const s of selected) slots[s] = state.draft[s]!.opId;
     setReview({ version: state.version, slots, alt: cleaned, pair: pairNow, altUnchanged: state.custom && cleaned === (state.alt || "") });
@@ -221,6 +243,7 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
     if (ok) {
       setAltBase(null);
       setAltTouched(false);
+      setAltConflict(null);
     }
   };
   const doSaveAlt = async () => {
@@ -229,7 +252,11 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
       altRef.current?.focus();
       return;
     }
-    if (await h.saveAlt({ expectedVersion: altBase ?? state.version, alt: cleaned })) setAltBase(null);
+    if (editStale()) return;
+    if (await h.saveAlt({ expectedVersion: state.version, alt: cleaned })) {
+      setAltBase(null);
+      setAltConflict(null);
+    }
   };
   const doRestore = async () => {
     const at = restoreAt ?? state.version;
@@ -250,7 +277,15 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
   return (
     <Shell status={statusPill}>
       <div className="space-y-5">
-        {state.environment && !state.environment.production && (
+        {state.environment && state.environment.writable === false && (
+          <div role="alert" className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <p>
+              <span className="font-medium">Read only here.</span> These banner settings belong to {state.environment.namespace === "site/hero/" ? "the live website" : "another environment"}; this server is not production, so it can't change them.
+            </p>
+          </div>
+        )}
+        {state.environment && !state.environment.production && state.environment.writable !== false && (
           <div className="flex items-start gap-2 rounded-md border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">
             <FlaskConical className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <p>
@@ -355,7 +390,7 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
               placeholder={`e.g. ${ALT_EXAMPLE}`}
               disabled={bannerBusy}
               aria-invalid={altTouched && !!altError}
-              aria-describedby={`${ids}-alt-hint ${ids}-alt-count${altTouched && altError ? ` ${ids}-alt-error` : ""}`}
+              aria-describedby={`${ids}-alt-hint ${ids}-alt-count${altTouched && altError ? ` ${ids}-alt-error` : ""}${altConflict && altDirty ? ` ${ids}-alt-conflict` : ""}`}
               onChange={(e) => {
                 setAlt(e.target.value);
                 if (altBase === null) setAltBase(state.version);
@@ -374,6 +409,15 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
                 {cleaned.length} / {ALT_MAX}
               </p>
             </div>
+            {altConflict && altDirty && (
+              <div id={`${ids}-alt-conflict`} role="status" className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                <p className="font-medium">The banner was changed while you were editing this description (in another tab or by another admin).</p>
+                <p className="mt-1">
+                  Its description now: {altConflict.alt ? <q className="break-words">{altConflict.alt}</q> : <span>none (the built-in banner is live)</span>}
+                </p>
+                <p className="mt-1">Your text is kept. Check it against the images above, then save or publish again — that replaces the description shown here.</p>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -382,7 +426,7 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
             </Button>
             {state.custom && selected.length === 0 && (
               <Button type="button" variant="outline" onClick={doSaveAlt} disabled={!canSaveAlt}>
-                {bannerBusy ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+                {bannerBusy ? <Loader2 className="motion-safe:animate-spin" aria-hidden="true" /> : null}
                 Save description
               </Button>
             )}
@@ -454,10 +498,12 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
               )}
             </>
           )}
+          {/* the page behind the dialog is hidden from screen readers: say here what is happening */}
+          {review && h.ops.banner.phase === "checking" && <BannerOpNotice op={h.ops.banner} inDialog onRetrySame={() => h.retrySame("banner")} onCheckAgain={() => h.checkAgain("banner")} onDismiss={() => h.dismiss("banner")} />}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={bannerBusy}>Cancel</AlertDialogCancel>
             <Button type="button" onClick={doPublish} disabled={bannerBusy} className="bg-primaryGreen text-white hover:bg-primaryGreen/90">
-              {bannerBusy ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+              {bannerBusy ? <Loader2 className="motion-safe:animate-spin" aria-hidden="true" /> : null}
               {bannerBusy ? "Publishing…" : "Publish"}
             </Button>
           </AlertDialogFooter>
@@ -524,10 +570,10 @@ function ChangeNotice({ change, onDismiss }: { change: LastChange; onDismiss: ()
   const n = change.notified;
   const refreshed = n && (n.site === "ok" || n.site === "mocked");
   const text = !n
-    ? `${what} (confirmed after a connection problem). The website shows it within an hour at the latest.`
+    ? `${what} (confirmed after a connection problem). The website usually shows it within a minute; if its refresh request was missed, it can take a little over an hour.`
     : refreshed
       ? `${what}. The website was asked to refresh — it shows the change within about a minute.`
-      : `${what}. The website didn't confirm the refresh, so it may take up to an hour to show the change.`;
+      : `${what}. The website didn't confirm the refresh, so it may take a little over an hour to show the change.`;
   return (
     <div role="status" className={cn("flex items-start gap-2 rounded-md border p-3 text-sm motion-safe:animate-in motion-safe:fade-in-0", refreshed ? "border-green-200 bg-green-50 text-green-900" : "border-amber-200 bg-amber-50 text-amber-900")}>
       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />

@@ -87,9 +87,11 @@ export function outputSize(region: Pick<CropRegion, "width" | "height">, slot: H
 }
 
 // Smaller than the box would be upscaled on the smallest screens that show it.
+// Mirrors the server: the width is exact, the height keeps the 1% slack of
+// the uncropped ratio tolerance.
 export function tooSmall(region: Pick<CropRegion, "width" | "height">, slot: HeroSlot): boolean {
   const [mw, mh] = HERO_SLOTS[slot].min;
-  return region.width < Math.floor(mw * (1 - RATIO_TOLERANCE)) || region.height < Math.floor(mh * (1 - RATIO_TOLERANCE));
+  return region.width < mw || region.height < Math.floor(mh * (1 - RATIO_TOLERANCE));
 }
 
 // --- file identification from its first bytes --------------------------------
@@ -277,7 +279,7 @@ export const NOTICE_TEXT: Record<string, string> = {
   CROPPED: "Cropped to the banner shape",
   RATIO_ACCEPTED: "Very different shape — used anyway",
   BELOW_RECOMMENDED: "Below the recommended size — may look slightly soft on large high-density screens",
-  CLIENT_REENCODED: "Compressed in your browser (the file was over 4 MB)",
+  CLIENT_REENCODED: "Compressed in your browser because the file was over 4 MB — fine coloured detail can look a little softer. For the sharpest result, export a JPEG under 4 MB.",
   ANIMATION_FIRST_FRAME: "Animated image — only the first frame is used",
 };
 

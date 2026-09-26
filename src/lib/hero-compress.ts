@@ -3,8 +3,10 @@
 //
 // It renders exactly what the server would keep: the crop at the chosen
 // focal point, scaled to the slot's cap, flattened on white (as the server
-// does) — so the only cost is one extra JPEG generation, which the draft's
-// "Compressed in your browser" notice discloses. Canvases are released as
+// does). The cost is one extra lossy generation — and the browser's canvas
+// JPEG encoder stores colour at half resolution (4:2:0; measured in
+// Chromium at every quality used here), so fine coloured lettering softens
+// slightly — which the draft's "Compressed in your browser" notice discloses. Canvases are released as
 // soon as they are used; nothing large outlives the call.
 import { compressionPlan, cropRegion, MAX_UPLOAD_BYTES, type Focal, type HeroSlot } from "@/lib/hero-banner";
 
