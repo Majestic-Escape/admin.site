@@ -232,11 +232,12 @@ export function HeroSlotCard({
   const statusClass = draft ? (draft.expired ? "bg-red-50 text-red-800 ring-red-200" : "bg-amber-50 text-amber-900 ring-amber-200") : live ? "bg-green-50 text-green-800 ring-green-200" : "bg-gray-100 text-gray-700 ring-gray-200";
   // the preview's real width: the card (≤ ~860 px), or half of it beside a draft (xl)
   const sizes = slot === "mobile" ? "220px" : draft ? "(min-width: 1280px) 400px, (min-width: 1024px) 700px, 100vw" : "(min-width: 1024px) 860px, 100vw";
-  const figureWidth = slot === "mobile" ? "max-w-[220px]" : "";
-  // Side by side only where the card really has the room (the sidebar takes
-  // 256 px from 768 px up): phones' tall previews beside the replace section
-  // from 1280 px; desktop live + draft from 1280 px.
-  const wide = slot === "mobile" ? (draft ? "xl:grid xl:grid-cols-[456px_minmax(0,1fr)] xl:items-start xl:gap-6" : "xl:grid xl:grid-cols-[220px_minmax(0,1fr)] xl:items-start xl:gap-6") : "";
+  const figureWidth = slot === "mobile" ? "w-[220px] max-w-full flex-none" : "min-w-0 flex-1 basis-[24rem]";
+  // Side by side only where the card itself has the room — wrapping, not
+  // viewport breakpoints, so larger text (browser text zoom) or a narrow card
+  // stacks instead of overflowing: phones' tall previews beside the replace
+  // section when it keeps ≥ 18rem; desktop live + draft when each keeps ≥ 24rem.
+  const wide = slot === "mobile" ? "flex flex-wrap items-start gap-x-6" : "";
 
   return (
     <section aria-labelledby={`${ids}-title`} className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
@@ -252,7 +253,7 @@ export function HeroSlotCard({
 
       <div className={wide}>
         {/* live and draft, side by side */}
-        <div className={cn("mt-4 grid gap-4", draft && (slot === "mobile" ? "sm:grid-cols-2" : "xl:grid-cols-2"))}>
+        <div className={cn("mt-4 flex flex-wrap gap-4", slot === "mobile" && "min-w-0 max-w-full")}>
           <figure className={cn("space-y-1.5", figureWidth)}>
             {live ? <HeroArtwork artwork={live} slot={slot} alt={`Live ${slot} banner`} sizes={sizes} /> : <BuiltInBanner slot={slot} />}
             <figcaption className="text-xs text-gray-600">
@@ -332,7 +333,7 @@ export function HeroSlotCard({
               pick(f);
             }
           }}
-          className={cn("mt-5 border-t border-gray-100 pt-4 outline-none", slot === "mobile" && "xl:mt-4 xl:min-w-0 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0")}
+          className={cn("mt-5 border-t border-gray-100 pt-4 outline-none", slot === "mobile" && "min-w-0 flex-1 basis-[18rem]")}
         >
           <h4 className="text-sm font-semibold text-gray-900">{draft ? "Replace the draft" : live ? "Change the image" : "Use your own image"}</h4>
           <input
@@ -353,7 +354,7 @@ export function HeroSlotCard({
             <div className={cn("mt-2 rounded-lg border-2 border-dashed px-4 py-6 text-center motion-safe:transition-colors motion-safe:duration-150", dragOver ? "border-primaryGreen bg-primaryGreen/5" : "border-gray-300 bg-gray-50/60")}>
               <ImagePlus className="mx-auto h-8 w-8 text-gray-400" aria-hidden="true" />
               <p className="mt-2 text-sm text-gray-700">Drop an image here, paste it, or</p>
-              <Button type="button" variant="outline" className="mt-2" disabled={reading || busy} onClick={() => inputRef.current?.click()} aria-describedby={`${ids}-spec`}>
+              <Button type="button" variant="outline" className="mt-2 h-auto min-h-9 max-w-full whitespace-normal" disabled={reading || busy} onClick={() => inputRef.current?.click()} aria-describedby={`${ids}-spec`}>
                 {reading ? <Loader2 className="motion-safe:animate-spin" aria-hidden="true" /> : null}
                 Choose {slot} image
               </Button>
