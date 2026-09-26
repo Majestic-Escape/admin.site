@@ -6,6 +6,15 @@ body, html {
   font-family: "Poppins", serif;
 }
 
+/* Below md the fixed bottom navigation covers the last ~4rem of the screen:
+   keyboard focus and scrollIntoView stop above it (WCAG 2.4.11). */
+@media not all and (min-width: 768px) {
+  html,
+  main {
+    scroll-padding-bottom: 5rem;
+  }
+}
+
 
 @layer base {
   :root {
