@@ -95,6 +95,7 @@ export function HeroSlotCard({
   onDismiss,
   onDiscard,
   onDismissDiscard,
+  announcement,
 }: {
   slot: HeroSlotName;
   live: HeroLive | null;
@@ -109,6 +110,7 @@ export function HeroSlotCard({
   onDismiss: () => void;
   onDiscard: (draftOpId: string) => Promise<boolean>;
   onDismissDiscard: () => void;
+  announcement: string; // this slot's latest outcome, for screen readers
 }) {
   const spec = HERO_SLOTS[slot];
   const ids = useId();
@@ -241,6 +243,10 @@ export function HeroSlotCard({
 
   return (
     <section aria-labelledby={`${ids}-title`} className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
+      {/* always mounted, so a new outcome is announced (sighted admins see it in the card) */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 id={`${ids}-title`} ref={headingRef} tabIndex={-1} className="text-base font-semibold text-gray-900 outline-none">

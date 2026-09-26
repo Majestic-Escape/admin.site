@@ -347,6 +347,7 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
             onDismiss={() => h.dismiss(slot)}
             onDiscard={(opId) => h.discard(slot, opId)}
             onDismissDiscard={() => h.dismiss(slot === "desktop" ? "discard-desktop" : "discard-mobile")}
+            announcement={h.announcements[slot]}
           />
         ))}
 

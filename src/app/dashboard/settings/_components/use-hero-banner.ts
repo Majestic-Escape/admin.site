@@ -19,7 +19,6 @@
 // lookup; an upload already sent finishes on the server.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import {
   ApiError,
   NetworkError,
@@ -195,6 +194,15 @@ export function useHeroBanner() {
   const [ops, setOps] = useState<Record<OpKey, OpState>>({ desktop: IDLE, mobile: IDLE, banner: IDLE, "discard-desktop": IDLE, "discard-mobile": IDLE });
   const setOp = useCallback((key: OpKey, next: OpState) => setOps((prev) => ({ ...prev, [key]: next })), []);
   const [lastChange, setLastChange] = useState<LastChange | null>(null);
+  // Outcomes of a slot's own actions, for its live region. No toasts here: the
+  // page already shows every outcome (the cards, the change notice), and a toast
+  // covered controls at 400 % zoom. Cleared first, so the same words are
+  // announced again the next time.
+  const [announcements, setAnnouncements] = useState<Record<HeroSlotName, string>>({ desktop: "", mobile: "" });
+  const say = useCallback((slot: HeroSlotName, text: string) => {
+    setAnnouncements((a) => ({ ...a, [slot]: "" }));
+    setTimeout(() => setAnnouncements((a) => ({ ...a, [slot]: text })), 50);
+  }, []);
 
   // Leaving the page: nothing new starts, every lookup stops.
   const alive = useRef(new AbortController());
@@ -423,10 +431,10 @@ export function useHeroBanner() {
         };
         draftAttempts.current[slot] = attempt;
         const ok = await sendDraft(attempt);
-        if (ok) toast.success(`${slot === "desktop" ? "Desktop" : "Mobile"} draft ready — review it, then publish.`);
+        if (ok) say(slot, `${slot === "desktop" ? "Desktop" : "Mobile"} draft ready — review it, then publish.`);
         return ok;
       }),
-    [enqueue, queryClient, sendDraft, setOp, takeToken],
+    [enqueue, queryClient, say, sendDraft, setOp, takeToken],
   );
 
   // Only a job that has not started can be cancelled.
@@ -491,7 +499,6 @@ export function useHeroBanner() {
     (input: { expectedVersion: number; slots: Partial<Record<HeroSlotName, string>>; alt: string; acknowledgeShortfall?: boolean }) =>
       run("banner", (opToken) => publishHero({ opToken, ...input }), (res) => {
         setLastChange({ kind: "publish", at: Date.now(), notified: res ? res.notified || null : null });
-        toast.success("Banner published.");
       }),
     [run],
   );
@@ -499,7 +506,6 @@ export function useHeroBanner() {
     (input: { expectedVersion: number; alt: string }) =>
       run("banner", (opToken) => editHeroAlt({ opToken, ...input }), (res) => {
         setLastChange({ kind: "alt", at: Date.now(), notified: res ? res.notified || null : null });
-        toast.success("Description saved.");
       }),
     [run],
   );
@@ -507,14 +513,13 @@ export function useHeroBanner() {
     (input: { expectedVersion: number }) =>
       run("banner", (opToken) => restoreHeroDefault({ opToken, ...input }), (res) => {
         setLastChange({ kind: "restore", at: Date.now(), notified: res ? res.notified || null : null });
-        toast.success("The built-in banner is back.");
       }),
     [run],
   );
   const discard = useCallback(
     (slot: HeroSlotName, expectedDraftOpId: string) =>
       run(slot === "desktop" ? "discard-desktop" : "discard-mobile", (opToken) => discardHeroDraft(slot, { opToken, expectedDraftOpId }), () => {
-        toast.success(`${slot === "desktop" ? "Desktop" : "Mobile"} draft discarded.`);
+        say(slot, `${slot === "desktop" ? "Desktop" : "Mobile"} draft discarded.`);
       }),
     [run],
   );
@@ -557,5 +562,5 @@ export function useHeroBanner() {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [sending]);
 
-  return { query, ops, lastChange, dismissLastChange: () => setLastChange(null), prepare, cancelQueued, publish, saveAlt, restore, discard, retrySame, checkAgain, dismiss, refresh: refreshState };
+  return { query, ops, announcements, lastChange, dismissLastChange: () => setLastChange(null), prepare, cancelQueued, publish, saveAlt, restore, discard, retrySame, checkAgain, dismiss, refresh: refreshState };
 }
