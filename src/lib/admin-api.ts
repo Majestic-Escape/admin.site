@@ -170,6 +170,11 @@ export interface HeroDraft extends HeroArtwork {
   expiresAt: string;
   expired: boolean;
   notices: string[];
+  // server-verified shortfalls (server.me services/siteHeroImage.js): widths
+  // over the size budget, and renditions below the quality target (always at
+  // least as good as the website's current banners)
+  overBudget?: { width: number; bytes: number; budget: number }[];
+  belowTarget?: { width: number; format: string; metrics: { ssim: number; p1: number; chroma: number }; target: { ssim: number; p1: number; chroma: number } }[];
 }
 export interface HeroState {
   version: number;
@@ -232,7 +237,7 @@ export async function fetchHeroAdmin() {
 export function fetchHeroOperation(opId: string) {
   return heroFetch<HeroOpStatus>(`/site/admin/hero/ops/${encodeURIComponent(opId)}`);
 }
-export function publishHero(body: { opToken: string; expectedVersion: number; slots: Partial<Record<HeroSlotName, string>>; alt: string }) {
+export function publishHero(body: { opToken: string; expectedVersion: number; slots: Partial<Record<HeroSlotName, string>>; alt: string; acknowledgeShortfall?: boolean }) {
   return heroFetch<HeroMutation>("/site/admin/hero/publish", { method: "POST", body: JSON.stringify(body) });
 }
 export function editHeroAlt(body: { opToken: string; expectedVersion: number; alt: string }) {

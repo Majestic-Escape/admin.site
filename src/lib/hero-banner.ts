@@ -281,7 +281,20 @@ export const NOTICE_TEXT: Record<string, string> = {
   BELOW_RECOMMENDED: "Below the recommended size — may look slightly soft on large high-density screens",
   CLIENT_REENCODED: "Compressed in your browser because the file was over 4 MB — fine coloured detail can look a little softer. For the sharpest result, export a JPEG under 4 MB.",
   ANIMATION_FIRST_FRAME: "Animated image — only the first frame is used",
+  BELOW_QUALITY_TARGET: "Below the website's quality target at some sizes — still at least as good as the current banners, but fine grain or detail is softened. Publishing it needs your confirmation.",
+  OVER_BYTE_BUDGET: "Larger than the website's size limit at some widths — it loads more slowly on some screens. Publishing it needs your confirmation.",
 };
+
+// The per-width details behind those two notices, in the admin's terms.
+export function shortfallLines(d: { overBudget?: { width: number; bytes: number; budget: number }[]; belowTarget?: { width: number; format: string }[] } | null | undefined): string[] {
+  if (!d) return [];
+  const kb = (b: number) => `${Math.round(b / 1024)} KB`;
+  const out: string[] = [];
+  for (const o of d.overBudget || []) out.push(`${o.width} px wide: ${kb(o.bytes)} (limit ${kb(o.budget)})`);
+  const below = [...new Set((d.belowTarget || []).map((b) => `${b.width} px`))];
+  if (below.length) out.push(`Below the quality target at ${below.join(", ")}`);
+  return out;
+}
 
 // Refusals that a retry can't change: the admin needs another file.
 export const NEEDS_ANOTHER_FILE = new Set([
@@ -296,6 +309,8 @@ export const NEEDS_ANOTHER_FILE = new Set([
   "TOO_LARGE_AFTER_COMPRESSION",
   "COMPRESSION_FAILED",
   "HTTP_413",
+  "HERO_QUALITY_LIMIT",
+  "HERO_BYTE_BUDGET",
 ]);
 
 // Share of the image the crop cuts off (0–1).

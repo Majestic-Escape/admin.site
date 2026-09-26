@@ -11,6 +11,7 @@
 // Focus follows the work: to the chosen image once it is read, to the
 // progress once it is being prepared, back to the card when a dialog closes
 // on something that no longer exists.
+import { shortfallLines } from "@/lib/hero-banner";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, ImagePlus, Info, Loader2, RotateCcw, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -276,6 +277,11 @@ export function HeroSlotCard({
                       <li key={n} className="flex items-start gap-1">
                         <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                         <span>{NOTICE_TEXT[n] || n}</span>
+                      </li>
+                    ))}
+                    {shortfallLines(draft).map((l) => (
+                      <li key={l} className="pl-4 text-amber-800">
+                        {l}
                       </li>
                     ))}
                   </ul>

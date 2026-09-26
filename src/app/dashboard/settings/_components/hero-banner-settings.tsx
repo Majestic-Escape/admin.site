@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ApiError, type HeroArtwork as Artwork, type HeroSlotName, type HeroState } from "@/lib/admin-api";
-import { ALT_MAX, cleanAlt, HERO_SLOT_NAMES } from "@/lib/hero-banner";
+import { ALT_MAX, cleanAlt, HERO_SLOT_NAMES, shortfallLines } from "@/lib/hero-banner";
 import { cn } from "@/lib/utils";
 import { HeroArtwork } from "./hero-artwork";
 import { BuiltInBanner, SITE_URL } from "./hero-built-in";
@@ -44,6 +44,8 @@ interface Review {
   alt: string;
   pair: Record<HeroSlotName, { art: Artwork | null; isNew: boolean }>;
   altUnchanged: boolean;
+  // shortfalls of the drafts being published (server-verified), per slot
+  shortfalls: { slot: HeroSlotName; lines: string[] }[];
 }
 
 export function HeroBannerSettings() {
@@ -160,6 +162,7 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
   const [altConflict, setAltConflict] = useState<{ version: number; alt: string } | null>(null);
   const [chosen, setChosen] = useState<Record<HeroSlotName, boolean>>({ desktop: true, mobile: true });
   const [review, setReview] = useState<Review | null>(null);
+  const [ackShortfall, setAckShortfall] = useState(false);
   const [restoreAt, setRestoreAt] = useState<number | null>(null); // the version the admin saw when asked
   const altDirty = altBase !== null;
 
@@ -234,11 +237,14 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
     if (editStale()) return;
     const slots: Partial<Record<HeroSlotName, string>> = {};
     for (const s of selected) slots[s] = state.draft[s]!.opId;
-    setReview({ version: state.version, slots, alt: cleaned, pair: pairNow, altUnchanged: state.custom && cleaned === (state.alt || "") });
+    const shortfalls = selected.map((s) => ({ slot: s, lines: shortfallLines(state.draft[s]) })).filter((x) => x.lines.length);
+    setAckShortfall(false);
+    setReview({ version: state.version, slots, alt: cleaned, pair: pairNow, altUnchanged: state.custom && cleaned === (state.alt || ""), shortfalls });
   };
   const doPublish = async () => {
     if (!review) return;
-    const ok = await h.publish({ expectedVersion: review.version, slots: review.slots, alt: review.alt });
+    if (review.shortfalls.length && !ackShortfall) return;
+    const ok = await h.publish({ expectedVersion: review.version, slots: review.slots, alt: review.alt, acknowledgeShortfall: review.shortfalls.length ? true : undefined });
     setReview(null);
     if (ok) {
       setAltBase(null);
@@ -498,11 +504,28 @@ function Loaded({ h, state }: { h: ReturnType<typeof useHeroBanner>; state: Hero
               )}
             </>
           )}
+          {review && review.shortfalls.length > 0 && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+              <p className="font-medium">Before this goes live</p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                {review.shortfalls.map((x) => (
+                  <li key={x.slot}>
+                    <span className="capitalize">{x.slot}</span>: {x.lines.join("; ")}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1 text-xs">Every size is at least as good as the website's current banners. A cleaner export (less grain or noise, simpler fine texture) usually meets the targets.</p>
+              <label className="mt-2 flex items-start gap-2">
+                <input type="checkbox" className="mt-0.5 h-4 w-4" checked={ackShortfall} onChange={(e) => setAckShortfall(e.target.checked)} />
+                <span>Publish anyway — I have reviewed these images.</span>
+              </label>
+            </div>
+          )}
           {/* the page behind the dialog is hidden from screen readers: say here what is happening */}
           {review && h.ops.banner.phase === "checking" && <BannerOpNotice op={h.ops.banner} inDialog onRetrySame={() => h.retrySame("banner")} onCheckAgain={() => h.checkAgain("banner")} onDismiss={() => h.dismiss("banner")} />}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={bannerBusy}>Cancel</AlertDialogCancel>
-            <Button type="button" onClick={doPublish} disabled={bannerBusy} className="bg-primaryGreen text-white hover:bg-primaryGreen/90">
+            <Button type="button" onClick={doPublish} disabled={bannerBusy || (!!review && review.shortfalls.length > 0 && !ackShortfall)} className="bg-primaryGreen text-white hover:bg-primaryGreen/90">
               {bannerBusy ? <Loader2 className="motion-safe:animate-spin" aria-hidden="true" /> : null}
               {bannerBusy ? "Publishing…" : "Publish"}
             </Button>

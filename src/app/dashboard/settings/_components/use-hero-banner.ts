@@ -134,6 +134,8 @@ function describe(err: unknown): { code: string; message: string } {
       case "OP_TOKEN_INVALID":
       case "OP_ID_REUSED":
         return { code: err.code, message: "This page was open too long before the change was sent. Nothing was changed — try again." };
+      case "HERO_ACK_REQUIRED":
+        return { code: err.code, message: "An image is below the quality target or over the size limit — review the details in the publish dialog and confirm to publish it anyway." };
       case "HTTP_413":
         return { code: err.code, message: "The file is too large for the server (the limit is 4 MB). Export a smaller JPEG and choose it again." };
       default:
@@ -486,7 +488,7 @@ export function useHeroBanner() {
   );
 
   const publish = useCallback(
-    (input: { expectedVersion: number; slots: Partial<Record<HeroSlotName, string>>; alt: string }) =>
+    (input: { expectedVersion: number; slots: Partial<Record<HeroSlotName, string>>; alt: string; acknowledgeShortfall?: boolean }) =>
       run("banner", (opToken) => publishHero({ opToken, ...input }), (res) => {
         setLastChange({ kind: "publish", at: Date.now(), notified: res ? res.notified || null : null });
         toast.success("Banner published.");
