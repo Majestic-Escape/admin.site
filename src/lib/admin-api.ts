@@ -144,3 +144,156 @@ export async function fetchKycSteps(hostId: string) {
   const res = await adminFetch<{ data: KycFormSummary[] }>(`/guests/kyc?id=${encodeURIComponent(hostId)}`);
   return Array.isArray(res.data) ? res.data : [];
 }
+
+// --- homepage banner (server.me docs/site-hero.md) ---------------------------
+export type HeroSlotName = "desktop" | "mobile";
+export interface HeroRendition {
+  width: number;
+  avif: string;
+  webp: string;
+}
+export interface HeroArtwork {
+  url: string;
+  width: number;
+  height: number;
+  lqip: string;
+  source: { width: number; height: number; bytes: number; clientReencoded: boolean } | null;
+  renditions: HeroRendition[];
+}
+export interface HeroLive extends HeroArtwork {
+  publishedAt: string | null;
+}
+export interface HeroDraft extends HeroArtwork {
+  opId: string;
+  stagedBy: string | null;
+  stagedAt: string;
+  expiresAt: string;
+  expired: boolean;
+  notices: string[];
+}
+export interface HeroState {
+  version: number;
+  alt: string | null;
+  custom: boolean;
+  desktop: HeroLive | null;
+  mobile: HeroLive | null;
+  draft: { desktop: HeroDraft | null; mobile: HeroDraft | null };
+  busy: { until: string; own: boolean } | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  // where this server keeps banner objects; only production's reach the site
+  environment?: { production: boolean; prefix: string };
+}
+export type HeroNotifyStatus = "ok" | "timeout" | "error" | "skipped" | "mocked" | "unknown";
+export interface HeroMutation {
+  success: true;
+  state: HeroState;
+  opToken: string;
+  replayed?: boolean;
+  version?: number;
+  changed?: boolean;
+  notified?: { site: HeroNotifyStatus; cdn: HeroNotifyStatus };
+}
+export interface HeroOpStatus {
+  success: true;
+  opId: string;
+  status: "processing" | "completed" | "failed" | "unknown";
+  result?: { httpStatus?: number; code?: string; message?: string; version?: number; draftOpId?: string };
+}
+
+// A request whose answer never arrived (offline, dropped connection, a
+// stalled upload): the change may or may not have happened — the caller
+// looks the operation up instead of guessing.
+export class NetworkError extends Error {
+  constructor(message = "The connection was interrupted") {
+    super(message);
+    this.name = "NetworkError";
+  }
+}
+
+// Every banner call has a deadline: a request that hangs becomes "no answer"
+// and is looked up (use-hero-banner.ts) instead of spinning forever.
+const HERO_TIMEOUT_MS = 45_000;
+async function heroFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  try {
+    return await adminFetch<T>(path, { cache: "no-store", signal: AbortSignal.timeout(HERO_TIMEOUT_MS), ...init });
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new NetworkError();
+  }
+}
+
+export async function fetchHeroAdmin() {
+  const res = await heroFetch<HeroState & { success: true; opToken: string }>("/site/admin/hero");
+  const state: HeroState = { version: res.version, alt: res.alt, custom: res.custom, desktop: res.desktop, mobile: res.mobile, draft: res.draft, busy: res.busy, updatedAt: res.updatedAt, updatedBy: res.updatedBy, environment: res.environment };
+  return { state, opToken: res.opToken };
+}
+export function fetchHeroOperation(opId: string) {
+  return heroFetch<HeroOpStatus>(`/site/admin/hero/ops/${encodeURIComponent(opId)}`);
+}
+export function publishHero(body: { opToken: string; expectedVersion: number; slots: Partial<Record<HeroSlotName, string>>; alt: string }) {
+  return heroFetch<HeroMutation>("/site/admin/hero/publish", { method: "POST", body: JSON.stringify(body) });
+}
+export function editHeroAlt(body: { opToken: string; expectedVersion: number; alt: string }) {
+  return heroFetch<HeroMutation>("/site/admin/hero/alt", { method: "PATCH", body: JSON.stringify(body) });
+}
+export function restoreHeroDefault(body: { opToken: string; expectedVersion: number }) {
+  return heroFetch<HeroMutation>("/site/admin/hero/restore-default", { method: "POST", body: JSON.stringify(body) });
+}
+export function discardHeroDraft(slot: HeroSlotName, body: { opToken: string; expectedDraftOpId: string }) {
+  return heroFetch<HeroMutation>(`/site/admin/hero/${slot}/draft`, { method: "DELETE", body: JSON.stringify(body) });
+}
+
+// The one multipart call. XMLHttpRequest because fetch reports no upload
+// progress. Resolves with the parsed body of a 2xx (201 = prepared, 200 = a
+// replay of the same operation, 202 = still being prepared by an earlier
+// attempt); rejects with ApiError for a server answer, NetworkError when no
+// answer came (including an abort).
+export function uploadHeroDraft(
+  slot: HeroSlotName,
+  form: FormData,
+  { onProgress, onSent, signal }: { onProgress?: (fraction: number) => void; onSent?: () => void; signal?: AbortSignal } = {},
+): Promise<HeroMutation | { success: true; status: "processing"; opId: string }> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_URL}/site/admin/hero/${slot}/draft`);
+    for (const [k, v] of Object.entries(adminAuthHeaders())) xhr.setRequestHeader(k, v);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) onProgress(Math.min(1, e.loaded / Math.max(1, e.total)));
+    };
+    xhr.upload.onload = () => onSent && onSent();
+    const onAbort = () => xhr.abort();
+    signal?.addEventListener("abort", onAbort, { once: true });
+    const done = () => signal?.removeEventListener("abort", onAbort);
+    xhr.onerror = () => {
+      done();
+      reject(new NetworkError());
+    };
+    xhr.onabort = () => {
+      done();
+      reject(new NetworkError("The upload was stopped"));
+    };
+    xhr.onload = () => {
+      done();
+      let body: Record<string, unknown> | null = null;
+      try {
+        body = JSON.parse(xhr.responseText) as Record<string, unknown>;
+      } catch {
+        body = null;
+      }
+      if (xhr.status === 401) {
+        handleUnauthorized();
+        reject(new ApiError(401, "AUTH_REQUIRED", "Your session has expired. Please sign in again."));
+        return;
+      }
+      if (xhr.status >= 200 && xhr.status < 300 && body) {
+        resolve(body as unknown as HeroMutation);
+        return;
+      }
+      const message = (typeof body?.message === "string" && body.message) || `Request failed (${xhr.status})`;
+      const code = (typeof body?.code === "string" && body.code) || `HTTP_${xhr.status}`;
+      reject(new ApiError(xhr.status, code, message, body));
+    };
+    xhr.send(form);
+  });
+}

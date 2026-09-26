@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "check:js": "node scripts/check-js-identifiers.mjs"
+    "check:js": "node scripts/check-js-identifiers.mjs",
+    "check:hero": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-hero.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.733.0",
