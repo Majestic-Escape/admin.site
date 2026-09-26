@@ -68,6 +68,8 @@ const synthetic = [
   ["truncated jpeg", bytes([0xff, 0xd8, 0xff, 0xe1], u16(4000), Buffer.alloc(100)), { kind: "jpeg", width: null, height: null, refused: true }],
   ["heic", bytes(u32(24), "ftypheic", u32(0), "mif1heic"), { kind: "heic", refused: /HEIC/ }],
   ["heif with a heic compatible brand", bytes(u32(24), "ftypmif1", u32(0), "mif1heic"), { kind: "heic", refused: /HEIC/ }],
+  ["animated avif (image sequence)", bytes(u32(32), "ftypavis", u32(0), "avismsf1miafMA1B"), { kind: "avis", refused: /Animated AVIF/ }],
+  ["still avif also declaring a sequence", bytes(u32(32), "ftypavif", u32(0), "avifmif1avismiaf"), { kind: "avis", refused: /Animated AVIF/ }],
   ["iso-bmff that is neither", bytes(u32(20), "ftypisom", u32(0), "isom"), { kind: "unknown", refused: true }],
   ["svg", bytes('<?xml version="1.0"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="740"></svg>'), { kind: "svg", refused: /SVG/ }],
   ["svg with a BOM", bytes([0xef, 0xbb, 0xbf], "<svg width='10' height='10'/>"), { kind: "svg", refused: /SVG/ }],

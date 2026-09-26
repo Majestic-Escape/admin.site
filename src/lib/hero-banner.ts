@@ -98,7 +98,7 @@ export function tooSmall(region: Pick<CropRegion, "width" | "height">, slot: Her
 // Only the header is read (a few hundred bytes; a JPEG's segments are walked
 // until its frame header), so a 25+ MP file is refused before any decode.
 
-export type ImageKind = "jpeg" | "png" | "webp" | "gif" | "avif" | "heic" | "svg" | "pdf" | "tiff" | "bmp" | "unknown";
+export type ImageKind = "jpeg" | "png" | "webp" | "gif" | "avif" | "avis" | "heic" | "svg" | "pdf" | "tiff" | "bmp" | "unknown";
 export interface ImageHeader {
   kind: ImageKind;
   width: number | null;
@@ -198,6 +198,8 @@ export async function readImageHeader(readAt: ReadAt, size: number): Promise<Ima
     const brands = [ascii(b, 8, 12)];
     for (let i = 16; i + 4 <= end; i += 4) brands.push(ascii(b, i, i + 4));
     if (brands.some((x) => HEIC_BRANDS.has(x))) return none("heic");
+    // an AVIF image sequence (animated): the server can't decode one (ANIMATED_AVIF_NOT_SUPPORTED)
+    if (brands.includes("avis")) return none("avis");
     if (brands.some((x) => AVIF_BRANDS.has(x))) {
       const s = bmffSize(b);
       return { kind: "avif", width: s ? s.width : null, height: s ? s.height : null };
@@ -221,6 +223,8 @@ export function headerProblem(header: ImageHeader, bytes: number): string | null
       return "SVG files can't be used — export the banner as a JPEG image.";
     case "pdf":
       return "PDFs can't be used — export the banner as a JPEG image.";
+    case "avis":
+      return "Animated AVIF files can't be used — export the banner as a still image (JPEG, PNG, WebP or a still AVIF).";
     case "tiff":
     case "bmp":
     case "unknown":
@@ -303,6 +307,7 @@ export const NEEDS_ANOTHER_FILE = new Set([
   "UNSUPPORTED_FORMAT",
   "UNSUPPORTED_FILE_TYPE",
   "HEIC_NOT_SUPPORTED",
+  "ANIMATED_AVIF_NOT_SUPPORTED",
   "IMAGE_TOO_LARGE",
   "FILE_TOO_LARGE",
   "HERO_TOO_SMALL",
