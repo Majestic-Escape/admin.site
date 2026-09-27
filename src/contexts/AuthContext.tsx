@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCheckToken } from "@/services/useCheckToken";
 import { isPlainObject, readJSON } from "@/lib/storage";
+import { queryKeys } from "@/lib/query-keys";
 type Admin = {
   email: string;
 
@@ -142,6 +143,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const logout = () => {
     setAdmin(null);
     localStorage.removeItem("admin");
+    // The admin's own name/e-mail (header, Settings) must never outlive the
+    // session — named explicitly so it stays gone even if clear() is ever
+    // narrowed.
+    queryClient.removeQueries({ queryKey: queryKeys.adminProfileAll });
     queryClient.clear();
   };
   const { checkToken } = useCheckToken();

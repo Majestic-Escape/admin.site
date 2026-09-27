@@ -15,12 +15,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Search, Settings, HelpCircle, LogOut } from "lucide-react";
+import { Bell, Search, Settings, HelpCircle, LogOut, UserRound } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { useEffect } from "react";
 import AdminBottomNavigation from "@/components/bottom-navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { adminFullName, adminInitials, useAdminProfile } from "@/hooks/use-admin-profile";
 
 import { useRouter } from "next/navigation";
 export default function DashboardLayout({ children }) {
@@ -29,6 +30,12 @@ export default function DashboardLayout({ children }) {
 
   const { user, logout } = useAuth();
   const router = useRouter();
+  // The signed-in admin (GET /admin/me). Until it loads — or if it fails —
+  // the avatar is a neutral icon and the menu shows no name: never a
+  // placeholder that looks like someone's identity.
+  const { data: profile } = useAdminProfile();
+  const profileName = adminFullName(profile);
+  const initials = adminInitials(profile);
 
   const auth = () => {
     // Presence check only (the API enforces auth). `loading` used to stay
@@ -111,24 +118,38 @@ export default function DashboardLayout({ children }) {
                   <Button
                     variant="ghost"
                     className="relative h-8 w-8 rounded-full"
+                    aria-label={profileName ? `Account menu for ${profileName}` : "Account menu"}
+                    data-testid="header-account"
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback>SC</AvatarFallback>
+                      <AvatarFallback>
+                        {profile && initials ? (
+                          <span data-testid="header-initials">{initials}</span>
+                        ) : (
+                          <UserRound className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                        )}
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        username
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        m@example.com
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                  {profile ? (
+                    <>
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none break-words" data-testid="header-name">
+                            {profileName || "—"}
+                          </p>
+                          {profile.email ? (
+                            <p className="text-xs leading-none text-muted-foreground break-all">
+                              {profile.email}
+                            </p>
+                          ) : null}
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                    </>
+                  ) : null}
                   {/* <DropdownMenuItem>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
