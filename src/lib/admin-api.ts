@@ -84,6 +84,26 @@ export async function renameUser(userId: string, next: { firstName: string; last
   });
 }
 
+// --- the signed-in admin ---------------------------------------------------
+// Their own name is what customers see in Support Chat ("Admin Support is
+// helping you"), so it is self-service; same rules and 409 contract as a user
+// rename (server.me /admin/me).
+export interface AdminProfile {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+export async function fetchMyProfile() {
+  const res = await adminFetch<{ success: true; data: AdminProfile }>("/admin/me", { cache: "no-store" });
+  return res.data;
+}
+export async function renameMe(next: { firstName: string; lastName: string }, expected: { firstName: string; lastName: string }) {
+  return adminFetch<{ success: true; changed: boolean; data: { firstName: string; lastName: string } }>("/admin/me/name", {
+    method: "PATCH",
+    body: JSON.stringify({ firstName: next.firstName, lastName: next.lastName, expected }),
+  });
+}
+
 // --- listings --------------------------------------------------------------
 export interface DeleteListingResult {
   _id: string;

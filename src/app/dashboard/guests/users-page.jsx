@@ -14,7 +14,7 @@ import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-quer
 import { USER } from "@/lib/query-presets";
 import { queryKeys } from "@/lib/query-keys";
 import { adminFetch } from "@/lib/admin-api";
-import { formatDate, formatINR } from "@/lib/format";
+import { formatDate, formatINR, formatJoined, formatJoinedCsv } from "@/lib/format";
 import { DataTableEmpty, DataTableError, DataTablePagination, DataTableToolbar, SortableHeader, useListParams } from "@/components/data-table";
 import { GuestTableSkeleton } from "./guest-table-skeleton";
 import EditUserNameDialog from "@/components/edit-user-name-dialog";
@@ -27,7 +27,7 @@ const SEGMENTS = {
   frequent: { minBookings: 3 },
   rated: { minRating: 4.5 },
 };
-const COLUMNS = 8;
+const COLUMNS = 9;
 
 export default function UsersPage() {
   const list = useListParams({ defaultSort: "updatedAt:desc", filters: FILTER_DEFAULTS });
@@ -79,9 +79,9 @@ export default function UsersPage() {
 
   const handleExportCSV = () => {
     if (guests.length === 0) return toast.error("No rows to export");
-    const headers = ["ID", "First Name", "Last Name", "Email", "Phone Number", "Host", "Bookings", "Total Spent", "Rating", "Last Booking", "Status"];
+    const headers = ["ID", "First Name", "Last Name", "Email", "Phone Number", "Joined (IST)", "Host", "Bookings", "Total Spent", "Rating", "Last Booking", "Status"];
     const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const rows = guests.map((g) => [g._id, g.firstName, g.lastName, g.email, g.phoneNumber, g.isHost ? "yes" : "no", g.totalBookings ?? 0, g.totalSpent ?? 0, g.averageRating ? Number(g.averageRating).toFixed(1) : "", g.lastBookingAt ? formatDate(g.lastBookingAt) : "", g.status?.active ? "Active" : "Banned"].map(esc).join(","));
+    const rows = guests.map((g) => [g._id, g.firstName, g.lastName, g.email, g.phoneNumber, formatJoinedCsv(g.createdAt), g.isHost ? "yes" : "no", g.totalBookings ?? 0, g.totalSpent ?? 0, g.averageRating ? Number(g.averageRating).toFixed(1) : "", g.lastBookingAt ? formatDate(g.lastBookingAt) : "", g.status?.active ? "Active" : "Banned"].map(esc).join(","));
     const blob = new Blob([[headers.map(esc).join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -153,7 +153,9 @@ export default function UsersPage() {
           <Card className="col-span-4">
             <CardHeader>
               <CardTitle className="text-absoluteDark font-bricolage font-medium text-xl">User List</CardTitle>
-              <CardDescription>Every registered account — hosts are marked. Edit a name with the pencil, review KYC, or ban.</CardDescription>
+              <CardDescription>
+                Every registered account — hosts are marked. Edit a name with the pencil, review KYC, or ban. <span data-testid="joined-note">Joined = when sign-up started (IST).</span>
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <DataTableToolbar search={q} onSearchChange={(v) => list.setFilter("q", v)} searchPlaceholder="Search by name, e-mail or phone" onReset={list.reset} isDirty={list.isDirty} resultCount={loading ? undefined : total}>
@@ -204,6 +206,9 @@ export default function UsersPage() {
                         </TableHead>
                         <TableHead>Phone</TableHead>
                         <TableHead>
+                          <SortableHeader label="Joined" sortKey="createdAt" sort={list} onSort={list.toggleSort} />
+                        </TableHead>
+                        <TableHead>
                           <SortableHeader label="Total Spent" sortKey="totalSpent" sort={list} onSort={list.toggleSort} />
                         </TableHead>
                         <TableHead>
@@ -234,6 +239,7 @@ export default function UsersPage() {
                             </TableCell>
                             <TableCell>{guest.email}</TableCell>
                             <TableCell>{guest.phoneNumber || "—"}</TableCell>
+                            <JoinedCell value={guest.createdAt} />
                             <TableCell>
                               {formatINR(guest.totalSpent || 0)}
                               {guest.totalBookings ? <span className="ml-1 text-xs text-muted-foreground">({guest.totalBookings} {guest.totalBookings === 1 ? "booking" : "bookings"})</span> : null}
@@ -270,5 +276,15 @@ export default function UsersPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+// Account creation date in IST; hover for the time (lib/format.ts formatJoined).
+function JoinedCell({ value }) {
+  const joined = formatJoined(value);
+  return (
+    <TableCell className="whitespace-nowrap" data-testid="user-joined">
+      <span title={joined.title}>{joined.label}</span>
+    </TableCell>
   );
 }

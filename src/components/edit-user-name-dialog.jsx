@@ -4,6 +4,13 @@
 // name required). The values the dialog opened with are sent as `expected`
 // so a stale page gets a 409 instead of silently overwriting someone
 // else's change.
+//
+// Also the admin's own name (Settings → "Your name in Support Chat"): pass
+// `save(next, expected)`, a `title`/`description`, and conflictMode="stay".
+// "close" (default) is the Users grid / host profile behaviour: a 409 toasts,
+// reports the server's name via onSaved(…, { stale: true }) and closes.
+// "stay" keeps the dialog and the typed input, shows the name that is saved
+// now, and makes that the new `expected` so a second Save goes through.
 import * as React from "react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -41,23 +48,34 @@ export function normalizeName(value) {
     .trim();
 }
 
-export default function EditUserNameDialog({ user, open, onOpenChange, onSaved }) {
-  const initial = React.useMemo(
+export default function EditUserNameDialog({ user, open, onOpenChange, onSaved, save, title, description, conflictMode = "close" }) {
+  const opened = React.useMemo(
     () => ({ firstName: user?.firstName ?? "", lastName: user?.lastName ?? "" }),
     [user?._id, user?.firstName, user?.lastName],
   );
-  const [firstName, setFirstName] = React.useState(initial.firstName);
-  const [lastName, setLastName] = React.useState(initial.lastName);
+  // What the server holds now, learnt from a 409 in "stay" mode; replaces
+  // `opened` as the baseline (`expected`) until the dialog is reopened.
+  const [conflict, setConflict] = React.useState(null);
+  const initial = conflict ?? opened;
+  const [firstName, setFirstName] = React.useState(opened.firstName);
+  const [lastName, setLastName] = React.useState(opened.lastName);
   const [errors, setErrors] = React.useState({});
   const [saving, setSaving] = React.useState(false);
 
+  // "stay" resets only when the dialog opens: a caller that stores the
+  // server's name after a conflict must not wipe what is being typed.
+  const wasOpen = React.useRef(false);
   React.useEffect(() => {
+    const justOpened = open && !wasOpen.current;
+    wasOpen.current = open;
     if (!open) return;
-    setFirstName(initial.firstName);
-    setLastName(initial.lastName);
+    if (conflictMode === "stay" && !justOpened) return;
+    setFirstName(opened.firstName);
+    setLastName(opened.lastName);
     setErrors({});
     setSaving(false);
-  }, [open, initial]);
+    setConflict(null);
+  }, [open, opened, conflictMode]);
 
   const next = { firstName: normalizeName(firstName), lastName: normalizeName(lastName) };
   const validation = schema.safeParse(next);
@@ -71,12 +89,20 @@ export default function EditUserNameDialog({ user, open, onOpenChange, onSaved }
     if (!canSave) return;
     setSaving(true);
     try {
-      const result = await renameUser(user._id, next, initial);
+      const result = save ? await save(next, initial) : await renameUser(user._id, next, initial);
       toast.success(result.changed ? "Name updated" : "Name unchanged");
       onSaved?.(result.data);
       onOpenChange(false);
     } catch (err) {
-      if (err?.status === 409) {
+      const current = err?.data?.data;
+      if (err?.status === 409 && conflictMode === "stay" && current && typeof current.firstName === "string") {
+        // Keep what was typed; the notice shows the saved name and the next
+        // Save is checked against it.
+        const saved = { firstName: current.firstName ?? "", lastName: current.lastName ?? "" };
+        setConflict(saved);
+        setErrors({});
+        onSaved?.(saved, { stale: true });
+      } else if (err?.status === 409) {
         toast.error(err.message || "This user's name was changed by someone else. Refresh and try again.");
         onSaved?.(err.data?.data ?? null, { stale: true });
         onOpenChange(false);
@@ -103,11 +129,20 @@ export default function EditUserNameDialog({ user, open, onOpenChange, onSaved }
       <DialogContent className="w-[calc(100%-2rem)] max-w-md rounded-lg">
         <form onSubmit={submit} noValidate>
           <DialogHeader>
-            <DialogTitle>Edit name</DialogTitle>
+            <DialogTitle>{title ?? "Edit name"}</DialogTitle>
             <DialogDescription>
-              {user?.email ? `Change the name shown for ${user.email}.` : "Change the name shown for this account."}
+              {description ?? (user?.email ? `Change the name shown for ${user.email}.` : "Change the name shown for this account.")}
             </DialogDescription>
           </DialogHeader>
+          {conflict ? (
+            <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800" role="status" data-testid="name-conflict">
+              <p>
+                This name was changed somewhere else. It is now{" "}
+                <span className="font-medium">{[conflict.firstName, conflict.lastName].filter(Boolean).join(" ") || "empty"}</span>.
+              </p>
+              <p className="mt-1">Your edit is kept below — Save again to replace it, or Cancel to keep the current name.</p>
+            </div>
+          ) : null}
           <div className="mt-4 grid gap-4">
             <div className="grid gap-1.5">
               <Label htmlFor="edit-first-name">First name</Label>
