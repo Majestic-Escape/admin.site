@@ -94,6 +94,21 @@ export default function SupportChatPage() {
   const activeIdRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const typingEmitRef = useRef(false);
+  const typingConvRef = useRef(null); // the conversation "typing" was announced in
+
+  // "Stopped typing" goes to the conversation the typing was announced in —
+  // not whichever is open by then. Otherwise leaving a thread (Back, another
+  // conversation) within 2 s left the customer seeing "typing…" for good.
+  const stopTyping = useCallback(() => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = null;
+    const id = typingConvRef.current;
+    if (typingEmitRef.current && id) {
+      socketRef.current?.emit("support:typing", { conversationId: id, isTyping: false });
+    }
+    typingEmitRef.current = false;
+    typingConvRef.current = null;
+  }, []);
   const toastTimerRef = useRef(null);
   const inboxRef = useRef(EMPTY_INBOX);
   inboxRef.current = inbox;
@@ -189,6 +204,8 @@ export default function SupportChatPage() {
         setAnnouncement(`New conversation from ${row.userName || row.userFirstName || "a customer"}`);
       }
       setInbox((s) => applyNewConversation(s, row));
+      // The open count only comes with a page.
+      if (inboxRef.current.openCount !== null) requestRefresh();
     });
 
     sock.on("support:conversation-updated", (payload) => {
@@ -305,6 +322,7 @@ export default function SupportChatPage() {
 
   const openConversation = useCallback((id) => {
     if (!socketRef.current) return;
+    stopTyping();
     // Set now, not after the render: the history reply can arrive first.
     activeIdRef.current = id;
     setActiveId(id);
@@ -333,7 +351,7 @@ export default function SupportChatPage() {
     }
     // Read receipts go when the history is on screen (support:history), naming
     // the newest message in it; the row's unread comes back from the server.
-  }, [conversations, showToast]);
+  }, [conversations, showToast, stopTyping]);
 
   const sendReply = useCallback(() => {
     if (!reply.trim() || !activeId || !socketRef.current) return;
@@ -342,6 +360,7 @@ export default function SupportChatPage() {
       return;
     }
     const text = reply.trim();
+    stopTyping();
     const clientMessageId = genClientMessageId();
     // Optimistic add
     setMessages((prev) => [
@@ -366,7 +385,7 @@ export default function SupportChatPage() {
       }
     );
     setReply("");
-  }, [reply, activeId, activeMeta, showToast]);
+  }, [reply, activeId, activeMeta, showToast, stopTyping]);
 
   const resolveConversation = useCallback(() => {
     if (!activeId || !socketRef.current) return;
@@ -590,7 +609,10 @@ export default function SupportChatPage() {
             <>
               <div className="border-b p-3 lg:p-4 flex items-center gap-3">
                 <button
-                  onClick={() => setActiveId(null)}
+                  onClick={() => {
+                    stopTyping();
+                    setActiveId(null);
+                  }}
                   className="lg:hidden p-1.5 -ml-1 rounded-md hover:bg-muted shrink-0"
                   aria-label="Back to conversations"
                 >
@@ -706,21 +728,18 @@ export default function SupportChatPage() {
                     setReply(e.target.value);
                     // Throttle typing emits — start once, stop after 2s of inactivity.
                     if (!socketRef.current?.connected || !activeIdRef.current) return;
+                    // Typing moved to another thread: the first one stops first.
+                    if (typingEmitRef.current && typingConvRef.current !== activeIdRef.current) stopTyping();
                     if (!typingEmitRef.current) {
                       typingEmitRef.current = true;
+                      typingConvRef.current = activeIdRef.current;
                       socketRef.current.emit("support:typing", {
                         conversationId: activeIdRef.current,
                         isTyping: true,
                       });
                     }
                     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                    typingTimeoutRef.current = setTimeout(() => {
-                      typingEmitRef.current = false;
-                      socketRef.current?.emit("support:typing", {
-                        conversationId: activeIdRef.current,
-                        isTyping: false,
-                      });
-                    }, 2000);
+                    typingTimeoutRef.current = setTimeout(stopTyping, 2000);
                   }}
                   placeholder={isResolved ? "Reopen the conversation to reply" : "Reply…"}
                   disabled={!isConnected || isResolved}
