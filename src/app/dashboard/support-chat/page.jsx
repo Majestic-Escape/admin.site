@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import { Send, CheckCircle2, RotateCcw, Star, ArrowLeft, X, AlertCircle } from "lucide-react";
+import ChatComposerField from "@/components/chat-composer-field";
 
 const SUPPORT_URL =
   process.env.NEXT_PUBLIC_SUPPORT_SOCKET_URL || "http://localhost:3003";
@@ -534,7 +535,7 @@ export default function SupportChatPage() {
                 }}
                 className="border-t p-3 flex gap-2"
               >
-                <input
+                <ChatComposerField
                   value={reply}
                   onChange={(e) => {
                     setReply(e.target.value);
@@ -558,7 +559,7 @@ export default function SupportChatPage() {
                   }}
                   placeholder={isResolved ? "Reopen the conversation to reply" : "Reply…"}
                   disabled={!isConnected || isResolved}
-                  className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primaryGreen focus:border-primaryGreen disabled:opacity-50"
+                  className="flex-1 min-w-0 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primaryGreen focus:border-primaryGreen disabled:opacity-50"
                 />
                 <button
                   type="submit"
