@@ -1,9 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
-import { Send, CheckCircle2, RotateCcw, Star, ArrowLeft, X, AlertCircle } from "lucide-react";
+import { Send, CheckCircle2, RotateCcw, Star, ArrowLeft, X, AlertCircle, Loader2 } from "lucide-react";
 import ChatComposerField from "@/components/chat-composer-field";
+import {
+  EMPTY_INBOX,
+  applyFirstPage,
+  applyNextPage,
+  applyNewConversation,
+  applyUpdate,
+  cursorOf,
+  withinLoaded,
+  mergeHistory,
+  readReceiptFor,
+} from "@/lib/support-inbox";
 
 const SUPPORT_URL =
   process.env.NEXT_PUBLIC_SUPPORT_SOCKET_URL || "http://localhost:3003";
@@ -43,10 +54,34 @@ function StatusPill({ status }) {
   );
 }
 
+// The customer as named on their record now (the server looks it up): first
+// name, then the last name lighter. Truncates; the full name is the tooltip.
+// Structured fields only — a full name is never split here.
+function CustomerName({ row, className = "" }) {
+  const first = row?.userFirstName || (row?.userId ? "User" : "Guest");
+  const last = row?.userLastName || "";
+  const full = row?.userName || (last ? `${first} ${last}` : first);
+  return (
+    <span className={`truncate ${className}`} title={full}>
+      {first}
+      {last ? <span className="font-normal text-foreground/70"> {last}</span> : null}
+    </span>
+  );
+}
+
+// How often the page may ask for a fresh first page (new conversation from an
+// older server, a row beyond what's loaded moving up, the open count).
+const REFRESH_MS = 3000;
+
 export default function SupportChatPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [authError, setAuthError] = useState(null);
-  const [conversations, setConversations] = useState([]);
+  // Rows ordered newest first; `hasMore` until the last page has been loaded;
+  // `openCount` from the server (null when it doesn't send one).
+  const [inbox, setInbox] = useState(EMPTY_INBOX);
+  const conversations = inbox.rows;
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
   const [activeId, setActiveId] = useState(null);
   const [activeMeta, setActiveMeta] = useState(null); // status, assignedAdminName, rating, etc.
   const [messages, setMessages] = useState([]);
@@ -59,7 +94,50 @@ export default function SupportChatPage() {
   const activeIdRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const typingEmitRef = useRef(false);
+  const typingConvRef = useRef(null); // the conversation "typing" was announced in
+
+  // "Stopped typing" goes to the conversation the typing was announced in —
+  // not whichever is open by then. Otherwise leaving a thread (Back, another
+  // conversation) within 2 s left the customer seeing "typing…" for good.
+  const stopTyping = useCallback(() => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = null;
+    const id = typingConvRef.current;
+    if (typingEmitRef.current && id) {
+      socketRef.current?.emit("support:typing", { conversationId: id, isTyping: false });
+    }
+    typingEmitRef.current = false;
+    typingConvRef.current = null;
+  }, []);
   const toastTimerRef = useRef(null);
+  const inboxRef = useRef(EMPTY_INBOX);
+  inboxRef.current = inbox;
+  const messagesRef = useRef([]);
+  messagesRef.current = messages;
+  const freshRowsRef = useRef(new Set()); // rows that arrived live: fade in once
+  const refreshRef = useRef({ last: 0, timer: null });
+
+  // Mark the open thread read up to the newest message on screen — only while
+  // the page is actually visible.
+  const sendRead = useCallback((conversationId, list) => {
+    const sock = socketRef.current;
+    if (!sock?.connected || !conversationId) return;
+    if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+    sock.emit("support:read", readReceiptFor(conversationId, list));
+  }, []);
+
+  // Ask for a fresh first page (merged, never replacing loaded older pages),
+  // at most once per REFRESH_MS; a request inside the window runs at its end.
+  const requestRefresh = useCallback(() => {
+    const r = refreshRef.current;
+    if (r.timer) return;
+    const wait = Math.max(0, r.last + REFRESH_MS - Date.now());
+    r.timer = setTimeout(() => {
+      r.timer = null;
+      r.last = Date.now();
+      socketRef.current?.emit("support:start");
+    }, wait);
+  }, []);
 
   const showToast = useCallback((message, tone = "error") => {
     setToast({ message, tone });
@@ -108,62 +186,51 @@ export default function SupportChatPage() {
       setIsConnected(false);
     });
 
+    // First page — on connect, and whenever the page asks for a refresh.
     sock.on("support:admin-init", (payload) => {
-      setConversations(payload.conversations || []);
+      setInbox((s) => applyFirstPage(s, payload || {}));
     });
 
-    sock.on("support:new-conversation", () => {
-      sock.emit("support:start");
+    // A conversation's first customer message. Current servers send the row;
+    // older ones only say "something changed", so the first page is re-read.
+    sock.on("support:new-conversation", (payload) => {
+      const row = payload?.conversation;
+      if (!row?.conversationId) {
+        requestRefresh();
+        return;
+      }
+      if (!inboxRef.current.rows.some((c) => c.conversationId === row.conversationId)) {
+        freshRowsRef.current.add(row.conversationId);
+        setAnnouncement(`New conversation from ${row.userName || row.userFirstName || "a customer"}`);
+      }
+      setInbox((s) => applyNewConversation(s, row));
+      // The open count only comes with a page.
+      if (inboxRef.current.openCount !== null) requestRefresh();
     });
 
     sock.on("support:conversation-updated", (payload) => {
-      setConversations((prev) => {
-        const idx = prev.findIndex(
-          (c) => c.conversationId === payload.conversationId
-        );
-        const base =
-          idx >= 0
-            ? prev[idx]
-            : {
-                conversationId: payload.conversationId,
-                status: "pending",
-                lastMessage: null,
-                unread: 0,
-                updatedAt: new Date().toISOString(),
-                assignedAdminId: null,
-                assignedAdminName: null,
-                rating: null,
-              };
-        const updated = {
-          ...base,
-          lastMessage: payload.lastMessage ?? base.lastMessage,
-          status: payload.status ?? base.status,
-          assignedAdminId:
-            payload.assignedAdminId !== undefined
-              ? payload.assignedAdminId
-              : base.assignedAdminId,
-          assignedAdminName:
-            payload.assignedAdminName !== undefined
-              ? payload.assignedAdminName
-              : base.assignedAdminName,
-          rating:
-            payload.rating !== undefined ? payload.rating : base.rating,
-          unread:
-            payload.lastMessage?.from === "user" &&
-            payload.conversationId !== activeIdRef.current
-              ? (base.unread || 0) + 1
-              : base.unread,
-          updatedAt: payload.lastMessage?.createdAt ?? base.updatedAt,
-        };
-        const rest = prev.filter(
-          (c) => c.conversationId !== payload.conversationId
-        );
-        return [updated, ...rest];
-      });
+      if (!payload?.conversationId) return;
+      const current = inboxRef.current;
+      const known = current.rows.find((c) => c.conversationId === payload.conversationId);
+      if (!known) {
+        // Not loaded: re-read the first page if it now belongs in view (it
+        // needs its customer's name, which events don't carry).
+        const at = payload.updatedAt ?? payload.lastMessage?.createdAt;
+        if (at && withinLoaded(current, at)) requestRefresh();
+        return;
+      }
+      setInbox((s) => applyUpdate(s, payload, activeIdRef.current));
+      // The open count only comes with a page; refresh it when a status moves.
+      if (current.openCount !== null && payload.status !== undefined && payload.status !== known.status) {
+        requestRefresh();
+      }
     });
 
     sock.on("support:message", (payload) => {
       if (payload.conversationId !== activeIdRef.current) return;
+      if (payload.message?.from === "user") {
+        sendRead(payload.conversationId, [...messagesRef.current, payload.message]);
+      }
       setMessages((prev) => {
         // Dedup by serverId
         if (prev.some((m) => m._id === payload.message._id)) return prev;
@@ -207,30 +274,57 @@ export default function SupportChatPage() {
     // the entire conversation (live + archive), so admins always see every
     // message even after a convo is resolved or has aged past the 500-message
     // ring buffer cap. Compliance requirement.
+    // Merged, not replaced: a reply or customer message that arrived while the
+    // history was on its way stays (and an optimistic reply meets its copy).
     sock.on("support:history", (payload) => {
       if (payload.conversationId !== activeIdRef.current) return;
-      setMessages(payload.messages || []);
+      const history = Array.isArray(payload.messages) ? payload.messages : [];
+      setMessages((prev) => mergeHistory(prev, history));
+      sendRead(payload.conversationId, history);
     });
 
     // Force an immediate reconnect when a backgrounded tab is refocused, so
     // the reply input doesn't sit disabled waiting out the backoff after an
-    // idle period.
+    // idle period. Coming back also marks the open thread read.
     const onVisible = () => {
-      if (document.visibilityState === "visible" && !sock.connected) {
+      if (document.visibilityState !== "visible") return;
+      if (!sock.connected) {
         sock.connect();
+        return;
       }
+      if (activeIdRef.current) sendRead(activeIdRef.current, messagesRef.current);
     };
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
+      if (refreshRef.current.timer) clearTimeout(refreshRef.current.timer);
+      refreshRef.current.timer = null;
       sock.disconnect();
       socketRef.current = null;
     };
-  }, [token]);
+  }, [token, requestRefresh, sendRead]);
+
+  const loadMore = useCallback(() => {
+    const sock = socketRef.current;
+    const before = cursorOf(inboxRef.current);
+    if (!sock?.connected || !before || loadingMore) return;
+    setLoadingMore(true);
+    sock.timeout(10_000).emit("support:admin-more", { before }, (err, ack) => {
+      setLoadingMore(false);
+      if (err || !ack?.ok) {
+        showToast(`Couldn't load more: ${err ? "no answer" : ack?.error ?? "unknown"}`);
+        return;
+      }
+      setInbox((s) => applyNextPage(s, ack));
+    });
+  }, [loadingMore, showToast]);
 
   const openConversation = useCallback((id) => {
     if (!socketRef.current) return;
+    stopTyping();
+    // Set now, not after the render: the history reply can arrive first.
+    activeIdRef.current = id;
     setActiveId(id);
     setMessages([]);
     setPeerTyping(false);
@@ -240,6 +334,8 @@ export default function SupportChatPage() {
       assignedAdminId: convo?.assignedAdminId ?? null,
       assignedAdminName: convo?.assignedAdminName ?? null,
       userFirstName: convo?.userFirstName ?? (convo?.userId ? "User" : "Guest"),
+      userLastName: convo?.userLastName ?? "",
+      userName: convo?.userName ?? null,
       userId: convo?.userId ?? null,
       rating: convo?.rating ?? null,
     });
@@ -253,11 +349,9 @@ export default function SupportChatPage() {
         if (ack && !ack.ok) showToast(`Couldn't open: ${ack.error}`);
       });
     }
-    setConversations((prev) =>
-      prev.map((c) => (c.conversationId === id ? { ...c, unread: 0 } : c))
-    );
-    socketRef.current.emit("support:read", { conversationId: id });
-  }, [conversations, showToast]);
+    // Read receipts go when the history is on screen (support:history), naming
+    // the newest message in it; the row's unread comes back from the server.
+  }, [conversations, showToast, stopTyping]);
 
   const sendReply = useCallback(() => {
     if (!reply.trim() || !activeId || !socketRef.current) return;
@@ -266,6 +360,7 @@ export default function SupportChatPage() {
       return;
     }
     const text = reply.trim();
+    stopTyping();
     const clientMessageId = genClientMessageId();
     // Optimistic add
     setMessages((prev) => [
@@ -290,7 +385,7 @@ export default function SupportChatPage() {
       }
     );
     setReply("");
-  }, [reply, activeId, activeMeta, showToast]);
+  }, [reply, activeId, activeMeta, showToast, stopTyping]);
 
   const resolveConversation = useCallback(() => {
     if (!activeId || !socketRef.current) return;
@@ -322,6 +417,50 @@ export default function SupportChatPage() {
     });
   }, [activeId, showToast]);
 
+  // The list keeps the admin's place while rows arrive or move: the row at the
+  // top of the view stays where it was (WebKit has no scroll anchoring), and a
+  // focused row keeps focus when React moves it.
+  const listRef = useRef(null);
+  const anchorRef = useRef(null); // { id, offset } of the first visible row
+  const focusedRowRef = useRef(null);
+  const recordAnchor = useCallback(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const top = list.scrollTop;
+    anchorRef.current = null;
+    if (top <= 0) return;
+    for (const el of list.querySelectorAll("[data-cid]")) {
+      if (el.offsetTop + el.offsetHeight > top) {
+        anchorRef.current = { id: el.dataset.cid, offset: el.offsetTop - top };
+        return;
+      }
+    }
+  }, []);
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    const anchor = anchorRef.current;
+    if (list && anchor) {
+      const el = list.querySelector(`[data-cid="${anchor.id}"]`);
+      if (el) list.scrollTop = el.offsetTop - anchor.offset;
+    }
+    recordAnchor();
+    const focusedId = focusedRowRef.current;
+    if (list && focusedId) {
+      const active = document.activeElement;
+      if (!active || active === document.body) {
+        list.querySelector(`[data-cid="${focusedId}"]`)?.focus({ preventScroll: true });
+      }
+    }
+  }, [conversations, recordAnchor]);
+  useEffect(() => {
+    // A click anywhere else means focus left the list on purpose.
+    const onPointerDown = (e) => {
+      if (!(e.target instanceof Element) || !e.target.closest("[data-cid]")) focusedRowRef.current = null;
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, []);
+
   if (!token) {
     return (
       <div className="p-6">
@@ -333,16 +472,27 @@ export default function SupportChatPage() {
     );
   }
 
-  const status = activeMeta?.status;
+  // The open thread's state comes from its row when the row is loaded (kept
+  // in commit order by `rev`), else from what was known when it was opened.
+  const activeRow = conversations.find((c) => c.conversationId === activeId) ?? null;
+  const status = activeRow?.status ?? activeMeta?.status;
   const isResolved = status === "resolved";
-  const adminName = activeMeta?.assignedAdminName;
-  const rating = activeMeta?.rating;
+  const adminName = activeRow ? activeRow.assignedAdminName : activeMeta?.assignedAdminName;
+  const rating = activeRow ? activeRow.rating : activeMeta?.rating;
+  const activePerson = activeRow ?? activeMeta;
 
   return (
     <div className="flex flex-col h-[calc(100dvh-4rem)] lg:h-[calc(100vh-4rem)] pb-16 lg:pb-0">
       <div className="px-4 lg:px-6 py-3 lg:py-4 border-b flex items-center justify-between bg-background">
         <div className="min-w-0">
-          <h1 className="text-lg lg:text-xl font-semibold">Support Chat</h1>
+          <h1 className="text-lg lg:text-xl font-semibold flex items-center gap-2">
+            Support Chat
+            {inbox.openCount !== null && (
+              <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full tabular-nums">
+                {inbox.openCount} open
+              </span>
+            )}
+          </h1>
           <p className="text-xs text-muted-foreground mt-0.5 truncate">
             {isConnected
               ? "Connected — real-time replies enabled"
@@ -356,30 +506,46 @@ export default function SupportChatPage() {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[320px_1fr] overflow-hidden min-h-0">
         {/* Conversation list — hidden on mobile when a convo is active */}
         <aside
-          className={`border-r bg-card overflow-y-auto ${
+          ref={listRef}
+          onScroll={recordAnchor}
+          aria-label="Conversations"
+          className={`relative border-r bg-card overflow-y-auto ${
             activeId ? "hidden lg:block" : "block"
           }`}
         >
           {conversations.length === 0 ? (
             <p className="text-sm text-muted-foreground p-6 text-center">
-              No active conversations yet. New user messages will appear here.
+              No conversations yet. They appear here when a customer sends a message.
             </p>
           ) : (
-            conversations.map((c) => (
+            conversations.map((c) => {
+              // The open thread is being read: its count is cleared by the
+              // read receipt, so don't flash it meanwhile.
+              const unread = c.conversationId === activeId ? 0 : c.unread;
+              return (
               <button
                 key={c.conversationId}
+                data-cid={c.conversationId}
                 onClick={() => openConversation(c.conversationId)}
-                className={`w-full text-left p-3 border-b hover:bg-muted/50 transition ${
+                onFocus={() => {
+                  focusedRowRef.current = c.conversationId;
+                }}
+                onBlur={(e) => {
+                  if (e.relatedTarget) focusedRowRef.current = null;
+                }}
+                aria-current={activeId === c.conversationId ? "true" : undefined}
+                className={`w-full text-left p-3 border-b hover:bg-muted/50 transition-colors ${
                   activeId === c.conversationId ? "bg-muted" : ""
-                }`}
+                } ${freshRowsRef.current.has(c.conversationId) ? "me-fade-in" : ""}`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-foreground truncate">
-                    {c.userFirstName ?? (c.userId ? "User" : "Guest")}
-                  </span>
-                  {c.unread > 0 && (
-                    <span className="bg-red-500 text-white text-[10px] font-semibold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
-                      {c.unread}
+                  <CustomerName row={c} className="text-sm font-semibold text-foreground min-w-0" />
+                  {unread > 0 && (
+                    <span
+                      className="bg-red-500 text-white text-[10px] font-semibold rounded-full min-w-5 h-5 px-1 flex items-center justify-center shrink-0"
+                      aria-label={`${unread} unread`}
+                    >
+                      {unread > 99 ? "99+" : unread}
                     </span>
                   )}
                 </div>
@@ -409,8 +575,24 @@ export default function SupportChatPage() {
                   )}
                 </div>
               </button>
-            ))
+              );
+            })
           )}
+          {inbox.hasMore ? (
+            <div className="p-3">
+              <button
+                type="button"
+                onClick={loadMore}
+                disabled={loadingMore || !isConnected}
+                className="w-full text-sm px-3 py-2 rounded-md border hover:bg-muted disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {loadingMore && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
+                {loadingMore ? "Loading…" : "Load older conversations"}
+              </button>
+            </div>
+          ) : conversations.length > 50 ? (
+            <p className="text-xs text-muted-foreground p-4 text-center">That's every conversation.</p>
+          ) : null}
         </aside>
 
         {/* Active chat — hidden on mobile when no convo is selected */}
@@ -427,16 +609,19 @@ export default function SupportChatPage() {
             <>
               <div className="border-b p-3 lg:p-4 flex items-center gap-3">
                 <button
-                  onClick={() => setActiveId(null)}
+                  onClick={() => {
+                    stopTyping();
+                    setActiveId(null);
+                  }}
                   className="lg:hidden p-1.5 -ml-1 rounded-md hover:bg-muted shrink-0"
                   aria-label="Back to conversations"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="flex flex-col gap-1 flex-1 min-w-0">
-                  <span className="text-base font-semibold flex items-center gap-2 truncate">
-                    {activeMeta?.userFirstName ?? "Guest"}
-                    {!activeMeta?.userId && (
+                  <span className="text-base font-semibold flex items-center gap-2 min-w-0">
+                    <CustomerName row={activePerson} className="min-w-0" />
+                    {activePerson?.userId === null && (
                       <span className="text-[10px] font-normal uppercase tracking-wide text-muted-foreground bg-muted px-2 py-0.5 rounded-full shrink-0">
                         Anonymous
                       </span>
@@ -460,6 +645,7 @@ export default function SupportChatPage() {
                   {isResolved ? (
                     <button
                       onClick={reopenConversation}
+                      aria-label="Reopen"
                       className="text-xs px-3 py-1.5 border rounded-md hover:bg-muted flex items-center gap-1"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
@@ -468,6 +654,7 @@ export default function SupportChatPage() {
                   ) : (
                     <button
                       onClick={resolveConversation}
+                      aria-label="Mark resolved"
                       className="text-xs px-3 py-1.5 border rounded-md hover:bg-muted flex items-center gap-1"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
@@ -525,7 +712,7 @@ export default function SupportChatPage() {
                     <span className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
                     <span className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                   </span>
-                  {(activeMeta?.userFirstName ?? "User")} is typing…
+                  {(activePerson?.userFirstName ?? "User")} is typing…
                 </div>
               )}
               <form
@@ -541,21 +728,18 @@ export default function SupportChatPage() {
                     setReply(e.target.value);
                     // Throttle typing emits — start once, stop after 2s of inactivity.
                     if (!socketRef.current?.connected || !activeIdRef.current) return;
+                    // Typing moved to another thread: the first one stops first.
+                    if (typingEmitRef.current && typingConvRef.current !== activeIdRef.current) stopTyping();
                     if (!typingEmitRef.current) {
                       typingEmitRef.current = true;
+                      typingConvRef.current = activeIdRef.current;
                       socketRef.current.emit("support:typing", {
                         conversationId: activeIdRef.current,
                         isTyping: true,
                       });
                     }
                     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                    typingTimeoutRef.current = setTimeout(() => {
-                      typingEmitRef.current = false;
-                      socketRef.current?.emit("support:typing", {
-                        conversationId: activeIdRef.current,
-                        isTyping: false,
-                      });
-                    }, 2000);
+                    typingTimeoutRef.current = setTimeout(stopTyping, 2000);
                   }}
                   placeholder={isResolved ? "Reopen the conversation to reply" : "Reply…"}
                   disabled={!isConnected || isResolved}
@@ -572,6 +756,12 @@ export default function SupportChatPage() {
             </>
           )}
         </section>
+      </div>
+
+      {/* Announces live inbox arrivals (outside the list, which is hidden on
+          phones while a thread is open). */}
+      <div className="sr-only" aria-live="polite">
+        {announcement}
       </div>
 
       {/* Custom confirm modal */}

@@ -16,6 +16,7 @@ export function GuestTableSkeleton() {
           <TableHead className="w-[100px]">Guest</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Phone</TableHead>
+          <TableHead>Joined</TableHead>
           <TableHead>Total Spent</TableHead>
           <TableHead>Rating</TableHead>
           <TableHead>Last Booking</TableHead>
@@ -34,6 +35,9 @@ export function GuestTableSkeleton() {
             </TableCell>
             <TableCell>
               <Skeleton className="h-4 w-[100px]" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-[90px]" />
             </TableCell>
             <TableCell>
               <Skeleton className="h-4 w-[60px]" />
