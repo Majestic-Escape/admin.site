@@ -158,7 +158,6 @@ export default function DashboardLayout({ children }) {
                     <HelpCircle className="mr-2 h-4 w-4" />
                     <span>Help</span>
                   </DropdownMenuItem> */}
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => {
                       logout();
@@ -168,7 +167,7 @@ export default function DashboardLayout({ children }) {
                     }}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span on>Log out</span>
+                    <span>Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
