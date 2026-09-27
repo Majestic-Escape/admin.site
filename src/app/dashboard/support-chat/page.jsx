@@ -623,6 +623,7 @@ export default function SupportChatPage() {
                   {isResolved ? (
                     <button
                       onClick={reopenConversation}
+                      aria-label="Reopen"
                       className="text-xs px-3 py-1.5 border rounded-md hover:bg-muted flex items-center gap-1"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
@@ -631,6 +632,7 @@ export default function SupportChatPage() {
                   ) : (
                     <button
                       onClick={resolveConversation}
+                      aria-label="Mark resolved"
                       className="text-xs px-3 py-1.5 border rounded-md hover:bg-muted flex items-center gap-1"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
