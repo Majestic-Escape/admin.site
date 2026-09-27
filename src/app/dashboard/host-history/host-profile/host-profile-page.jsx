@@ -75,6 +75,7 @@ import { Pencil } from "lucide-react";
 import Link from "next/link";
 import EditUserNameDialog from "@/components/edit-user-name-dialog";
 import { queryKeys } from "@/lib/query-keys";
+import { formatJoined } from "@/lib/format";
 
 export default function HostProfilePage() {
   const [propertys, setPropertys] = React.useState([]);
@@ -354,6 +355,8 @@ export default function HostProfilePage() {
                 <ProfileItem label={profile?.email} />
               </>
             ) : null}
+            <ProfileItem label="Joined" />
+            <JoinedValue value={profile?.createdAt} />
             {dob ? (
               <>
                 <ProfileItem label="Date of Birth" />
@@ -858,6 +861,18 @@ export default function HostProfilePage() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// Account creation date in IST (sign-up started); hover for the time.
+function JoinedValue({ value }) {
+  const joined = formatJoined(value);
+  return (
+    <div className="flex items-center justify-between border-b pb-3" data-testid="profile-joined">
+      <span className="text-gray-800" title={joined.title}>
+        {joined.label}
+      </span>
     </div>
   );
 }

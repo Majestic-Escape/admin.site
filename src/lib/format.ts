@@ -214,3 +214,94 @@ export function apiDate(d: Date): string {
   const x = d instanceof Date ? d : new Date(d);
   return `${x.getMonth() + 1}/${x.getDate()}/${x.getFullYear()}`;
 }
+
+// ---------------------------------------------------------------------------
+// Account creation ("Joined") — always shown in India time
+// ---------------------------------------------------------------------------
+
+// "Joined" is when the account was created (sign-up started). The admins
+// work in IST, so the calendar day is IST whatever the browser's zone is: an
+// account created at 00:10 IST must not read as the previous day on a
+// laptop set to UTC. Only a real instant is accepted — a Date, epoch ms in
+// range, or an ISO timestamp that carries its offset ("…Z" / "…+05:30").
+// Impossible calendar values are rejected here instead of being normalised
+// by Date.parse ("2026-02-30T00:00:00Z" would otherwise become 2 Mar), and a
+// date without an offset is not guessed at. Never estimated from an _id.
+const ISO_INSTANT =
+  /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(\.\d{1,9})?)?(Z|[+-]\d{2}:?\d{2})$/i;
+
+function daysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+export function parseInstant(value: unknown): Date | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : new Date(value.getTime());
+  }
+  if (typeof value === "number") {
+    if (!Number.isFinite(value) || value < EPOCH_MIN || value > EPOCH_MAX) return null;
+    return new Date(value);
+  }
+  if (typeof value !== "string") return null;
+  const m = ISO_INSTANT.exec(value.trim());
+  if (!m) return null;
+  const [y, mo, d, h, mi] = [+m[1], +m[2], +m[3], +m[4], +m[5]];
+  const s = m[6] === undefined ? 0 : +m[6];
+  const ms = m[7] === undefined ? 0 : Math.floor(Number(`0${m[7]}`) * 1000);
+  if (mo < 1 || mo > 12 || d < 1 || d > daysInMonth(y, mo) || h > 23 || mi > 59 || s > 59) return null;
+  let offsetMin = 0;
+  if (m[8].toUpperCase() !== "Z") {
+    const sign = m[8][0] === "-" ? -1 : 1;
+    const digits = m[8].slice(1).replace(":", "");
+    const oh = +digits.slice(0, 2);
+    const om = +digits.slice(2, 4);
+    if (oh > 23 || om > 59) return null;
+    offsetMin = sign * (oh * 60 + om);
+  }
+  // Same 2000–2100 window as parseDate (Date.UTC also maps years 0–99 to 19xx).
+  const t = Date.UTC(y, mo - 1, d, h, mi, s, ms) - offsetMin * 60_000;
+  return Number.isFinite(t) && t >= EPOCH_MIN && t <= EPOCH_MAX ? new Date(t) : null;
+}
+
+const IST = "Asia/Kolkata";
+const joinedDateFormatter = new Intl.DateTimeFormat("en-IN", {
+  timeZone: IST,
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+const joinedTimeFormatter = new Intl.DateTimeFormat("en-IN", {
+  timeZone: IST,
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+const joinedCsvFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: IST,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+// { label: "27 Sept 2026", title: "27 Sept 2026, 2:29 am IST" }; anything
+// that is not a real instant → { label: "—" } with no title.
+export function formatJoined(value: unknown): { label: string; title?: string } {
+  const d = parseInstant(value);
+  if (!d) return { label: "—" };
+  const label = joinedDateFormatter.format(d);
+  // ICU puts a narrow no-break space before "am"/"pm" in some versions.
+  const time = joinedTimeFormatter.format(d).replace(/[\u202f\u00a0]/g, " ");
+  return { label, title: `${label}, ${time} IST` };
+}
+
+// "2026-09-27 02:29 IST" for spreadsheets (sortable as text); "" when missing.
+export function formatJoinedCsv(value: unknown): string {
+  const d = parseInstant(value);
+  if (!d) return "";
+  const parts: Record<string, string> = {};
+  for (const p of joinedCsvFormatter.formatToParts(d)) parts[p.type] = p.value;
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute} IST`;
+}

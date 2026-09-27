@@ -70,7 +70,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { parseFiniteNumber } from "@/lib/format";
+import { formatJoined, parseFiniteNumber } from "@/lib/format";
 
 const fullName = (person) =>
   `${person?.firstName ?? ""} ${person?.lastName ?? ""}`.trim() || "—";
@@ -328,7 +328,7 @@ export default function BookingsPage() {
                       : Math.ceil(parseFiniteNumber(item?.averageRating) * 100) /
                         100}
                   </TableCell>
-                  <TableCell>{item?.createdAt ? new Date(item.createdAt).toDateString().slice(4) : "—"}</TableCell>
+                  <JoinedCell value={item?.createdAt} />
 
                   {/* <TableCell className="text-right">
                 <DropdownMenu>
@@ -675,5 +675,15 @@ export default function BookingsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+// Account creation date in IST; hover for the time (lib/format.ts formatJoined).
+function JoinedCell({ value }) {
+  const joined = formatJoined(value);
+  return (
+    <TableCell className="whitespace-nowrap" data-testid="host-joined">
+      <span title={joined.title}>{joined.label}</span>
+    </TableCell>
   );
 }

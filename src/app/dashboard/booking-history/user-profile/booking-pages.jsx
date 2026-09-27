@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { apiDate } from "@/lib/format";
+import { apiDate, formatJoined } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -252,7 +252,7 @@ export default function ProfilePage() {
 
             <div className="text-center max-w-md">
               <h1 className="text-2xl font-semibold">
-                {profile?.firstName + " " + profile?.lastName}
+                {[profile?.firstName, profile?.lastName].filter(Boolean).join(" ")}
               </h1>
               <p className="text-gray-600 text-sm mt-1">
                 +91-{profile?.phoneNumber}
@@ -283,6 +283,8 @@ export default function ProfilePage() {
                 <ProfileItem label={profile?.email} />
               </>
             ) : null}
+            <ProfileItem label="Joined" />
+            <JoinedValue value={profile?.createdAt} />
             {dob ? (
               <>
                 <ProfileItem label="Date of Birth" />
@@ -700,6 +702,18 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// Account creation date in IST (sign-up started); hover for the time.
+function JoinedValue({ value }) {
+  const joined = formatJoined(value);
+  return (
+    <div className="flex items-center justify-between border-b pb-3" data-testid="profile-joined">
+      <span className="text-gray-800" title={joined.title}>
+        {joined.label}
+      </span>
     </div>
   );
 }
