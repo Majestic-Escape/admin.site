@@ -1,12 +1,37 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useRef } from "react";
+import { forwardRef, useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 // A reply never contains a line break, as with the <input type="text"> this
 // field replaces; breaks that get in become one space per run. Never makes
 // the text longer, so maxLength still holds.
 const LINE_BREAKS = /[\r\n\u2028\u2029]+/g;
 const HAS_LINE_BREAK = /[\r\n\u2028\u2029]/;
+
+// How many wrapped lines the field grows to before it scrolls internally
+// instead \u2014 WhatsApp-style. A caller can pass a different `maxRows`.
+const DEFAULT_MAX_ROWS = 5;
+
+// The field's natural height for its current value: `rows=1` (or CSS)
+// supplies the resting height, this grows it up to `maxRows` of wrapped
+// text and switches to an internal scrollbar beyond that. Reads the
+// computed line-height/padding/border fresh each time rather than caching
+// them, so it stays correct across a browser zoom or font-size change.
+function autoResize(el, maxRows) {
+  const cs = getComputedStyle(el);
+  const lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+  const border = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+  const padding = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const max = lineHeight * maxRows + padding + border; // border-box height, to set on `el.style.height`
+  el.style.height = "auto"; // shrink first, so scrollHeight reflects the new content, not the old box
+  // scrollHeight is always content+padding, never border, whatever the box's
+  // own box-sizing is (Tailwind's preflight makes that border-box here) — add
+  // it back so the box actually fits what was just measured, not `border`px short.
+  const contentHeight = el.scrollHeight + border;
+  const next = Math.min(contentHeight, max);
+  el.style.height = `${next}px`;
+  el.style.overflowY = contentHeight > max + 0.5 ? "auto" : "hidden";
+}
 
 function flattenLineBreaks(text, caret) {
   const at = Math.max(0, Math.min(caret, text.length));
@@ -45,18 +70,22 @@ function submitImplicitly(form) {
 }
 
 /**
- * The reply field of the support console: one line, Enter sends.
+ * The reply field of the support console: Enter sends; text wraps and the
+ * field grows with it, up to `maxRows`, then scrolls internally — like a
+ * WhatsApp/iMessage composer.
  *
  * Why a <textarea>: Chrome on Android shows its autofill bar (passwords, cards,
  * addresses) above the keyboard for every text <input>, autocomplete="off" or
- * not, and never for a textarea. A chat reply is never autofill data.
+ * not, and never for a textarea. A chat reply is never autofill data. (This is
+ * about the element, not its row count or wrapping — both are unrelated to
+ * Chrome's autofill heuristic.)
  *
  * Enter (Shift+Enter too) never inserts a break and submits the enclosing
  * form, exactly as it did for the input. A keyboard that commits "\n" instead
  * of pressing Enter submits too. Pasted, dropped or committed breaks become
  * spaces. Enter that confirms an IME composition only confirms it.
  */
-const ChatComposerField = forwardRef(function ChatComposerField({ className, onChange, onKeyDown, ...props }, ref) {
+const ChatComposerField = forwardRef(function ChatComposerField({ className, maxRows = DEFAULT_MAX_ROWS, onChange, onKeyDown, ...props }, ref) {
   const fieldRef = useRef(null);
   const setRef = useCallback(
     (el) => {
@@ -157,11 +186,27 @@ const ChatComposerField = forwardRef(function ChatComposerField({ className, onC
     return () => el.removeEventListener("beforeinput", onBeforeInput);
   }, []);
 
+  // Grows with the (wrapped) content, capped at maxRows — before paint, so
+  // a restored draft or a programmatic clear never flashes the wrong height.
+  useLayoutEffect(() => {
+    const el = fieldRef.current;
+    if (el) autoResize(el, maxRows);
+  }, [props.value, maxRows]);
+
+  // A browser zoom or orientation change can change the line-height in CSS
+  // pixels without changing the value; recompute against the same content.
+  useEffect(() => {
+    const el = fieldRef.current;
+    if (!el) return undefined;
+    const onResize = () => autoResize(el, maxRows);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [maxRows]);
+
   return (
     <textarea
       ref={setRef}
       rows={1}
-      wrap="off"
       autoComplete="off"
       autoCorrect="on"
       autoCapitalize="sentences"
@@ -173,7 +218,7 @@ const ChatComposerField = forwardRef(function ChatComposerField({ className, onC
       onKeyDown={handleKeyDown}
       // a plain join: none of these clash with a caller's classes, and this page
       // doesn't otherwise load tailwind-merge (8 kB on its first load)
-      className={`block resize-none overflow-x-auto overflow-y-hidden whitespace-pre no-scrollbar ${className ?? ""}`}
+      className={`block resize-none [overflow-wrap:anywhere] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-black/15 [&::-webkit-scrollbar-thumb]:rounded-full ${className ?? ""}`}
     />
   );
 });
