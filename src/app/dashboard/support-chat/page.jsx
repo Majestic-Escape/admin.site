@@ -715,12 +715,16 @@ export default function SupportChatPage() {
                   {(activePerson?.userFirstName ?? "User")} is typing…
                 </div>
               )}
+              {/* items-end: as the field grows past one line the Send
+                  button stays pinned to its bottom edge (WhatsApp-style)
+                  instead of stretching to the row's full height, which is
+                  the form's default align-items. */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   sendReply();
                 }}
-                className="border-t p-3 flex gap-2"
+                className="border-t p-3 flex gap-2 items-end"
               >
                 <ChatComposerField
                   value={reply}
@@ -743,12 +747,15 @@ export default function SupportChatPage() {
                   }}
                   placeholder={isResolved ? "Reopen the conversation to reply" : "Reply…"}
                   disabled={!isConnected || isResolved}
-                  className="flex-1 min-w-0 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primaryGreen focus:border-primaryGreen disabled:opacity-50"
+                  // A fixed 20px radius (not rounded-full) — half of the 38px
+                  // resting height, so it still reads as a full pill at rest —
+                  // stays sensible instead of ballooning once the field grows.
+                  className="flex-1 min-w-0 border rounded-[1.25rem] px-4 py-2 text-sm leading-5 focus:outline-none focus:ring-1 focus:ring-primaryGreen focus:border-primaryGreen disabled:opacity-50"
                 />
                 <button
                   type="submit"
                   disabled={!reply.trim() || !isConnected || isResolved}
-                  className="px-4 bg-primaryGreen text-white rounded-full text-sm flex items-center gap-1 disabled:opacity-50"
+                  className="px-4 py-2 bg-primaryGreen text-white rounded-full text-sm flex items-center gap-1 disabled:opacity-50"
                 >
                   <Send className="w-3.5 h-3.5" /> Send
                 </button>
