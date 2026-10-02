@@ -121,7 +121,7 @@ export default function BookingPage() {
   ];
 
   return (
-    <div className="min-h-screen font-poppins">
+    <div className="min-h-screen font-poppins pb-24 md:pb-0">
       <header className="flow-root bg-offWhite shadow-sm">
         <div className=" max-w-7xl mx-auto py-4 ml-10 sm:px-6 lg:px-8">
           <div className="text-center">

@@ -473,7 +473,9 @@ const AnalyticsPage = () => {
       </div>
 
       <div className="flex flex-col md:flex-row justify-between md:items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
-        <div className="flex flex-col pb-5 md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+        {/* Four fixed-width filters (~890px) wrap instead of forcing the page to
+            scroll sideways in the ~497px column at 768–1100. */}
+        <div className="flex flex-col pb-5 md:flex-row md:flex-wrap gap-4">
           <Select onValueChange={handleDateRangeChange}>
             <SelectTrigger className="w-full md:w-[180px] bg-white">
               <SelectValue placeholder="Select time period" />

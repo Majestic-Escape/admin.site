@@ -131,7 +131,7 @@ export default function HostsPage() {
   if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className="flex-1 space-y-4 bg-gray-200 p-8 pt-6">
+    <div className="flex-1 space-y-4 bg-gray-200 p-8 pt-6 pb-24 md:pb-8">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-semibold tracking-tight font-bricolage">
           Hosts
@@ -212,8 +212,11 @@ export default function HostsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 flex items-center gap-4">
-                <div className="relative flex-1">
+              {/* Wraps on narrow screens: the search keeps a usable width (it
+                  collapsed to a 46px icon box) and the rows-per-page select no
+                  longer runs past the screen edge. */}
+              <div className="mb-4 flex flex-wrap items-center gap-4">
+                <div className="relative flex-1 min-w-[12rem]">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search guests"
