@@ -1,5 +1,6 @@
 import { Key, User, Users, UsersRound, UserRound } from "lucide-react";
 import Link from "next/link";
+import { formatTime12h } from "@/lib/format";
 
 export default function PropertyDescription({ description, property }) {
   function prettify(str) {
@@ -49,9 +50,6 @@ export default function PropertyDescription({ description, property }) {
   const matchedAmenities = allAmenities?.filter((amenity) =>
     property?.occupancy?.includes(amenity.id)
   );
-  const changeTime = (num) => {
-    return `${Number(num) - 12} p.m.`;
-  };
   return (
     <>
       <div className="border-b pb-6 mb-6">
@@ -145,18 +143,13 @@ export default function PropertyDescription({ description, property }) {
           <p className="text-gray-800 mb-4">
             <div className="">
               {" "}
+              {/* formatTime12h validates each time on its own: the check-out
+                  branch used to test checkinTime, printing "-1 p.m." or
+                  "NaN p.m." when check-out was earlier or missing. */}
               The check in time is{" "}
-              {property?.checkinTime
-                ? property?.checkinTime > 12
-                  ? changeTime(property?.checkinTime)
-                  : `${property?.checkinTime} a.m.`
-                : "TBD"}{" "}
+              {formatTime12h(property?.checkinTime, "TBD")}{" "}
               and the check out time is{" "}
-              {property?.checkinTime
-                ? property?.checkinTime > 12
-                  ? changeTime(property?.checkoutTime)
-                  : `${property?.checkoutTime} a.m.`
-                : "TBD"}
+              {formatTime12h(property?.checkoutTime, "TBD")}
               .
             </div>
           </p>

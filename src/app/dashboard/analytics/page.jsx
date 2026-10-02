@@ -159,7 +159,26 @@ const bookings = [
   },
 ];
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+// With many properties the legend grew to fill the 300px chart (12 entries =
+// 288px in a phone-width card) and sat on top of the pie. Capped, it scrolls,
+// and recharts sizes the pie from the remaining height.
+const PIE_LEGEND_STYLE = { maxHeight: 72, overflowY: "auto" };
 const AnalyticsPage = () => {
+  // 768–1023: the pie cards sit two-up in a ~500px column and the outside
+  // "Name... 12%" labels ran past the card edges. There, show only the
+  // percentage; the Legend below each pie still names every slice.
+  const [compactPieLabels, setCompactPieLabels] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px) and (max-width: 1023px)");
+    const sync = () => setCompactPieLabels(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  const pieLabel = ({ name, percent }) => {
+    const pct = `${Number.isFinite(percent) ? (percent * 100).toFixed(0) : 0}%`;
+    return compactPieLabels ? pct : `${name?.slice(0, 11) ?? ""}... ${pct}`;
+  };
   const today = new Date();
   const [dateRange, setDateRange] = useState({
     from: subDays(today, 7),
@@ -732,12 +751,10 @@ const AnalyticsPage = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  outerRadius={80}
+                  outerRadius="65%" /* scales with the card; a fixed 80px radius was cut off in ~150px-wide cards on phones */
                   fill="#8884d8"
                   dataKey={`booking`}
-                  label={({ name, percent }) =>
-                    `${name?.slice(0, 11) ?? ""}... ${Number.isFinite(percent) ? (percent * 100).toFixed(0) : 0}%`
-                  }
+                  label={pieLabel}
                 >
                   {propertyPieData.map((entry, index) => (
                     <Cell
@@ -747,7 +764,7 @@ const AnalyticsPage = () => {
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend />
+                <Legend wrapperStyle={PIE_LEGEND_STYLE} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -806,12 +823,10 @@ const AnalyticsPage = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  outerRadius={80}
+                  outerRadius="65%" /* scales with the card; a fixed 80px radius was cut off in ~150px-wide cards on phones */
                   fill="#8884d8"
                   dataKey={`guests`}
-                  label={({ name, percent }) =>
-                    `${name?.slice(0, 11) ?? ""}... ${Number.isFinite(percent) ? (percent * 100).toFixed(0) : 0}%`
-                  }
+                  label={pieLabel}
                 >
                   {propertyPieData.map((entry, index) => (
                     <Cell
@@ -821,7 +836,7 @@ const AnalyticsPage = () => {
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend />
+                <Legend wrapperStyle={PIE_LEGEND_STYLE} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
