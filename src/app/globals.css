@@ -172,3 +172,19 @@ body, html {
     }
   }
 }
+
+/* Horizontal scroll cue for tables wider than their card (shadcn Table wrapper).
+   Pure-CSS scroll shadows: the "local" gradients travel with the content and
+   cover the "scroll" shadows at each end, so a soft edge shadow shows only on
+   the side that has more columns. Touch browsers hide scrollbars, so without
+   this nothing told users the Status / Actions columns were off to the right. */
+.table-scroll-cue {
+  background:
+    linear-gradient(to right, hsl(var(--card)) 30%, hsl(var(--card) / 0)) left center,
+    linear-gradient(to left, hsl(var(--card)) 30%, hsl(var(--card) / 0)) right center,
+    radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0)) left center,
+    radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0)) right center;
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
