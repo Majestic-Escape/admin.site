@@ -103,7 +103,8 @@ export default function PropertyDescription({ description, property }) {
           </svg>
         </button>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      {/* One column below 360: two-up left each policy 120px wide at 320. */}
+      <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-4">
         <div className="border-b pb-6 mb-6">
           <h2 className="text-xl font-medium mb-6">Cancellation Policy</h2>
           <p className="text-gray-800 mb-4">

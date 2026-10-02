@@ -526,7 +526,7 @@ const ReviewsPage = () => {
                       <Image
                         src={review.userAvatar}
                         alt={review.userName}
-                        className="w-8 h-8 rounded-full mr-2"
+                        className="w-8 h-8 shrink-0 rounded-full mr-2"
                       />
                       {checkLength(
                         fullName(review?.user),
@@ -548,6 +548,9 @@ const ReviewsPage = () => {
                   </TableCell>
                   <TableCell className="max-w-xs truncate">
                     {checkLength(review.content)}
+                  </TableCell>
+                  <TableCell className="capitalize">
+                    {review?.hideStatus || "—"}
                   </TableCell>
 
                   <TableCell>

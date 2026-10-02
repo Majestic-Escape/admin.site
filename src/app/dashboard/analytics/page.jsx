@@ -475,7 +475,9 @@ const AnalyticsPage = () => {
   const emails = [];
   return (
     <div className="container mx-auto  pt-10 pb-24 md:py-10 px-8 min-h-screen bg-gray-200 ">
-      <div className="flex justify-between">
+      {/* Stacks below sm: side by side, 'Export Report' touched the heading
+          (0px gap) and squeezed the description to 108px at 320. */}
+      <div className="flex flex-col items-start pb-5 sm:flex-row sm:justify-between sm:pb-0">
         <div className="pb-5">
           <h1 className="text-2xl font-semibold font-bricolage text-absoluteDark mb-2">
             Analytics Insights

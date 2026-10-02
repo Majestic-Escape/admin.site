@@ -220,7 +220,10 @@ export default function TransactionsPage() {
             </TableCell>
             <TableCell>{transaction?.createdAt?.split("T")[0] ?? "—"}</TableCell>
             <TableCell>{transaction?.customerDetails?.name}</TableCell>
-            <TableCell>{transaction?.propertyId?.title}</TableCell>
+            {/* Squeezed to its longest word, a long title wrapped to ~14 lines
+                and made the row 200-330px tall below 1920. A minimum width
+                keeps the whole title (the table scrolls inside its card). */}
+            <TableCell className="min-w-[12rem]">{transaction?.propertyId?.title}</TableCell>
             <TableCell>{transaction?.paymentMethod}</TableCell>
           </TableRow>
         ))}

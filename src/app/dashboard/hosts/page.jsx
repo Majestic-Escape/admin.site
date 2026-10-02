@@ -144,7 +144,9 @@ export default function HostsPage() {
         </div>
       </div>
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+        {/* Lets the tabs give up a little padding at 320, where the list
+            ended 8px past the content column. */}
+        <TabsList className="max-w-full [&>*]:min-w-0">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -329,7 +331,8 @@ export default function HostsPage() {
                         <TableRow key={guest.id}>
                           <TableCell className="font-medium">
                             <div className="flex  items-center w-full">
-                              <span className="w-32">
+                              {/* min-w, not w: a long unbroken name overflowed the fixed 128px span into the Email column */}
+                              <span className="min-w-32">
                                 {" "}
                                 {guest.firstName + " " + guest.lastName}
                               </span>
@@ -371,8 +374,10 @@ export default function HostsPage() {
                       ))}
                     </TableBody>
                   </Table>
-                  <div className="mt-4 flex items-center justify-between">
-                    <small>
+                  {/* Wraps the buttons under the summary once they no longer
+                      fit beside it: at 320 'Next' ended 11px past the edge. */}
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-y-2">
+                    <small className="flex-1">
                       Showing {(currentPage - 1) * rowsPerPage + 1} to{" "}
                       {Math.min(
                         currentPage * rowsPerPage,

@@ -786,7 +786,8 @@ export function ListingsTable() {
       /> */}
 
       {/* ----------- STATS CARDS ----------- */}
-      <div className="grid grid-cols-4 gap-4 mb-4">
+      {/* 2x2 below 360: four columns were 52px at 320, narrower than 'Active'/'Today' + padding. */}
+      <div className="grid grid-cols-2 min-[360px]:grid-cols-4 gap-4 mb-4">
         <div className="p-4 bg-white rounded shadow text-center">
           <div className="md:hidden text-sm font-medium">Total</div>
           <div className="hidden md:block text-sm font-medium">

@@ -170,7 +170,8 @@ export default function UsersPage() {
                   </SelectContent>
                 </Select>
                 <Select value={role} onValueChange={(v) => list.setFilter("role", v)}>
-                  <SelectTrigger className="h-9 w-full md:w-[150px]" aria-label="Role" data-testid="filter-role">
+                  {/* 170px: 'Hosts and guests' was cut by 12px at 150px */}
+                  <SelectTrigger className="h-9 w-full md:w-[170px]" aria-label="Role" data-testid="filter-role">
                     <SelectValue placeholder="Role" />
                   </SelectTrigger>
                   <SelectContent>
