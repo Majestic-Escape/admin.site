@@ -164,12 +164,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 // and recharts sizes the pie from the remaining height.
 const PIE_LEGEND_STYLE = { maxHeight: 72, overflowY: "auto" };
 const AnalyticsPage = () => {
-  // 768–1023: the pie cards sit two-up in a ~500px column and the outside
-  // "Name... 12%" labels ran past the card edges. There, show only the
-  // percentage; the Legend below each pie still names every slice.
+  // Where the pie cards are narrow (below 360, and 768–1279 where they sit
+  // two-up) the outside "Name... 12%" labels ran past the card edges. There,
+  // show only the percentage; the Legend below each pie still names every slice.
   const [compactPieLabels, setCompactPieLabels] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px) and (max-width: 1023px)");
+    const mq = window.matchMedia("(max-width: 359px), (min-width: 768px) and (max-width: 1279px)");
     const sync = () => setCompactPieLabels(mq.matches);
     sync();
     mq.addEventListener("change", sync);
