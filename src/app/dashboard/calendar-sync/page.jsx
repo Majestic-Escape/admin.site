@@ -21,6 +21,7 @@ const CONNECTION_STATES = {
   NEEDS_ATTENTION: { label: "Needs attention", tone: "bg-red-100 text-red-900 border-red-200" },
   STALE: { label: "Out of date", tone: "bg-amber-100 text-amber-900 border-amber-200" },
   DEGRADED: { label: "Retrying", tone: "bg-amber-100 text-amber-900 border-amber-200" },
+  PARTIAL: { label: "Partly read", tone: "bg-amber-100 text-amber-900 border-amber-200" },
   PENDING: { label: "Checking", tone: "bg-gray-100 text-gray-800 border-gray-200" },
   HEALTHY: { label: "Up to date", tone: "bg-green-100 text-green-900 border-green-200" },
 };
@@ -29,7 +30,7 @@ const SCHEDULER_STATES = {
   DEGRADED: { label: "Running late", tone: "bg-amber-100 text-amber-900 border-amber-200" },
   STALE: { label: "Stopped", tone: "bg-red-100 text-red-900 border-red-200" },
 };
-const TILE_ORDER = ["HEALTHY", "DEGRADED", "STALE", "NEEDS_ATTENTION", "BROKEN", "PENDING"];
+const TILE_ORDER = ["HEALTHY", "PARTIAL", "DEGRADED", "STALE", "NEEDS_ATTENTION", "BROKEN", "PENDING"];
 
 function ago(value) {
   if (!value) return "never";
@@ -146,7 +147,7 @@ export default function CalendarSyncPage() {
       </Card>
 
       {data ? (
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6" aria-label="Calendars by state">
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7" aria-label="Calendars by state">
           {TILE_ORDER.map((s) => (
             <li key={s} className="rounded-lg border bg-white p-3">
               <div className="text-2xl font-bold font-bricolage">{data.byHealth?.[s] ?? 0}</div>
