@@ -19,6 +19,7 @@ import {
   Users,
   Building,
   Calendar,
+  CalendarClock,
   UserCheck,
   DollarSign,
   BarChart2,
@@ -147,6 +148,21 @@ export function Sidebar() {
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 History
+              </Link>
+            </Button>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link
+                href="/dashboard/calendar-sync"
+                className={`flex items-center w-full ${
+                  isActive("/dashboard/calendar-sync")
+                    ? activeClass
+                    : "text-muted-foreground"
+                }`}
+              >
+                <CalendarClock className="mr-2 h-4 w-4" />
+                Calendar sync
               </Link>
             </Button>
           </SidebarMenuItem>
