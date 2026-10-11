@@ -131,7 +131,7 @@ export default function HostsPage() {
   if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className="flex-1 space-y-4 bg-gray-200 p-8 pt-6">
+    <div className="flex-1 space-y-4 bg-gray-200 p-8 pt-6 pb-24 md:pb-8">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-semibold tracking-tight font-bricolage">
           Hosts
@@ -144,7 +144,9 @@ export default function HostsPage() {
         </div>
       </div>
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+        {/* Lets the tabs give up a little padding at 320, where the list
+            ended 8px past the content column. */}
+        <TabsList className="max-w-full [&>*]:min-w-0">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -212,8 +214,11 @@ export default function HostsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 flex items-center gap-4">
-                <div className="relative flex-1">
+              {/* Wraps on narrow screens: the search keeps a usable width (it
+                  collapsed to a 46px icon box) and the rows-per-page select no
+                  longer runs past the screen edge. */}
+              <div className="mb-4 flex flex-wrap items-center gap-4">
+                <div className="relative flex-1 min-w-[12rem]">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search guests"
@@ -326,7 +331,8 @@ export default function HostsPage() {
                         <TableRow key={guest.id}>
                           <TableCell className="font-medium">
                             <div className="flex  items-center w-full">
-                              <span className="w-32">
+                              {/* min-w, not w: a long unbroken name overflowed the fixed 128px span into the Email column */}
+                              <span className="min-w-32">
                                 {" "}
                                 {guest.firstName + " " + guest.lastName}
                               </span>
@@ -368,8 +374,10 @@ export default function HostsPage() {
                       ))}
                     </TableBody>
                   </Table>
-                  <div className="mt-4 flex items-center justify-between">
-                    <small>
+                  {/* Wraps the buttons under the summary once they no longer
+                      fit beside it: at 320 'Next' ended 11px past the edge. */}
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-y-2">
+                    <small className="flex-1">
                       Showing {(currentPage - 1) * rowsPerPage + 1} to{" "}
                       {Math.min(
                         currentPage * rowsPerPage,

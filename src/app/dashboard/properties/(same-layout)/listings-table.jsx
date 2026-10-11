@@ -474,6 +474,15 @@ export function ListingsTable() {
               height={50}
               className="rounded-md cursor-pointer"
               onClick={() => handleImageClick(photos, row.getValue("title"))}
+              // A photo that fails to load shows a neutral tile once, instead of
+              // the browser's broken-image glyph.
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (img.dataset.fallback) return;
+                img.dataset.fallback = "1";
+                img.removeAttribute("srcset");
+                img.src = "/images/photo-placeholder.svg";
+              }}
             />
           ) : (
             <div className="w-[50px] h-[50px] bg-gray-200 rounded-md"></div>
@@ -777,7 +786,8 @@ export function ListingsTable() {
       /> */}
 
       {/* ----------- STATS CARDS ----------- */}
-      <div className="grid grid-cols-4 gap-4 mb-4">
+      {/* 2x2 below 360: four columns were 52px at 320, narrower than 'Active'/'Today' + padding. */}
+      <div className="grid grid-cols-2 min-[360px]:grid-cols-4 gap-4 mb-4">
         <div className="p-4 bg-white rounded shadow text-center">
           <div className="md:hidden text-sm font-medium">Total</div>
           <div className="hidden md:block text-sm font-medium">

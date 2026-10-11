@@ -43,7 +43,9 @@ export default function ImageCollection({
     <>
       <div className="relative me-fade-in" style={{ height: `${height}px` }}>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 rounded-xl overflow-hidden h-full">
-          <div className="sm:col-span-2 sm:row-span-2 relative h-full">
+          {/* A single photo spans the whole gallery; as the first of a 2x2 grid
+              it used to fill only the left half next to empty space. */}
+          <div className={`sm:col-span-2 sm:row-span-2 ${displayImages.length === 1 ? "md:col-span-4" : ""} relative h-full`}>
             {displayImages.length > 0 ? (
               <Image
                 src={displayImages[0] || "/placeholder.svg"}

@@ -228,7 +228,7 @@ export default function KycDetailsPage() {
   const formInfo = docsQuery.data?.form;
 
   return (
-    <div className="flex-1 min-h-screen space-y-4 bg-gray-200 p-4 pt-6 md:p-8">
+    <div className="flex-1 min-h-screen space-y-4 bg-gray-200 p-4 pt-6 pb-24 md:p-8">
       <div className="space-y-2">
         {/* KYC details is a Users page: the Users section stays highlighted
             (lib/nav-active) and this link is the way back to the list. */}

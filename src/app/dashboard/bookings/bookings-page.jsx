@@ -1046,11 +1046,14 @@ export default function BookingsPage() {
           </p>
         </div>
       )}
-      <div className="md:flex items-center justify-between space-y-2">
+      <div className="md:flex md:flex-wrap items-center justify-between gap-x-4 space-y-2">
         <h2 className="text-3xl font-semibold font-bricolage tracking-tight">
           Bookings
         </h2>
-        <div className="md:flex items-center md:space-x-2">
+        {/* Title + controls wrap instead of overflowing the ~497px column at
+            768–1023 (fixed 256px sidebar), which made the whole page scroll
+            sideways and pushed Export off-screen. */}
+        <div className="md:flex md:flex-wrap items-center md:gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -1104,7 +1107,7 @@ export default function BookingsPage() {
             </PopoverContent>
           </Popover>
           <Button
-            className="mt-4 md:mt-0 w-full bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
+            className="mt-4 md:mt-0 w-full md:w-auto bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
             onClick={() => {
               if (!date?.from || !date?.to) {
                 toast.error("Select both dates on calendar before export");

@@ -71,7 +71,8 @@ export function PropertyType({ formData, updateFormData }) {
               <RadioGroup
                 value={propertyType}
                 onValueChange={handleChange}
-                className="grid md:grid-cols-5 m-2 grid-cols-2 gap-4"
+                // 5 columns only from lg (at 768 the ~60px tiles ran labels together)
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 m-2 gap-4"
               >
                 {propertyTypes.map((type) => (
                   <div key={type.id} className="relative">
@@ -86,10 +87,10 @@ export function PropertyType({ formData, updateFormData }) {
                         type.id === propertyType
                           ? "ring-primaryGreen ring-2"
                           : ""
-                      } flex flex-col items-center justify-center p-4 border-2 rounded-lg cursor-pointer hover:border-brightGreen peer-checked:border-brightGreen peer-checked:bg-brightGreen/10`}
+                      } flex min-w-0 flex-col items-center justify-center p-2 sm:p-4 border-2 rounded-lg cursor-pointer hover:border-brightGreen peer-checked:border-brightGreen peer-checked:bg-brightGreen/10`}
                     >
                       <span className="text-4xl mb-2">{type.icon}</span>
-                      <span className="font-medium font-bricolage text-absoluteDark text-center">
+                      <span className="max-w-full font-medium font-bricolage text-absoluteDark text-center [overflow-wrap:anywhere]">
                         {type.label}
                       </span>
                     </Label>

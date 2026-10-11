@@ -357,7 +357,9 @@ const ReviewsPage = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-4">
-            <div className="flex grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* 4 columns only from xl: at 768–1279 four filters left the date
+                range narrower than its text (it spilled past the card). */}
+            <div className="flex grid w-full gap-4 md:grid-cols-2 xl:grid-cols-4">
               <DataTableSearch
                 value={search}
                 onChange={(v) => list.setFilter("q", v)}
@@ -405,7 +407,7 @@ const ReviewsPage = () => {
                     id="date"
                     variant={"outline"}
                     className={cn(
-                      " justify-start text-left font-normal",
+                      "h-auto min-h-9 w-full min-w-0 justify-start whitespace-normal text-left font-normal",
                       !date && "text-muted-foreground",
                     )}
                   >
@@ -524,7 +526,7 @@ const ReviewsPage = () => {
                       <Image
                         src={review.userAvatar}
                         alt={review.userName}
-                        className="w-8 h-8 rounded-full mr-2"
+                        className="w-8 h-8 shrink-0 rounded-full mr-2"
                       />
                       {checkLength(
                         fullName(review?.user),
@@ -546,6 +548,9 @@ const ReviewsPage = () => {
                   </TableCell>
                   <TableCell className="max-w-xs truncate">
                     {checkLength(review.content)}
+                  </TableCell>
+                  <TableCell className="capitalize">
+                    {review?.hideStatus || "—"}
                   </TableCell>
 
                   <TableCell>
