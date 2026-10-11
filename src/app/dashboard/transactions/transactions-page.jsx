@@ -220,7 +220,10 @@ export default function TransactionsPage() {
             </TableCell>
             <TableCell>{transaction?.createdAt?.split("T")[0] ?? "—"}</TableCell>
             <TableCell>{transaction?.customerDetails?.name}</TableCell>
-            <TableCell>{transaction?.propertyId?.title}</TableCell>
+            {/* Squeezed to its longest word, a long title wrapped to ~14 lines
+                and made the row 200-330px tall below 1920. A minimum width
+                keeps the whole title (the table scrolls inside its card). */}
+            <TableCell className="min-w-[12rem]">{transaction?.propertyId?.title}</TableCell>
             <TableCell>{transaction?.paymentMethod}</TableCell>
           </TableRow>
         ))}
@@ -230,9 +233,12 @@ export default function TransactionsPage() {
 
   return (
     <div className="flex-1 space-y-4 px-8 pt-8 pb-24 md:p-8 md:pt-6">
-      <div className="md:flex items-center justify-between space-y-2">
+      <div className="md:flex md:flex-wrap items-center justify-between gap-x-4 space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Transactions</h2>
-        <div className="md:flex items-center md:space-x-2">
+        {/* Title + controls wrap instead of overflowing the ~497px column at
+            768–1023 (fixed 256px sidebar), which made the whole page scroll
+            sideways and pushed Export off-screen. */}
+        <div className="md:flex md:flex-wrap items-center md:gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -265,7 +271,7 @@ export default function TransactionsPage() {
               />
             </PopoverContent>
           </Popover>
-          <Button className="mt-4 w-full md:mt-0 ">
+          <Button className="mt-4 w-full md:mt-0 md:w-auto">
             <Download className="mr-2 h-4 w-4" />
             Export CSV
           </Button>

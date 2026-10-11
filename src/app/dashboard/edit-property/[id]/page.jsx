@@ -136,7 +136,7 @@ const EditPropertyPage = () => {
           Update
         </Button>
       </div>
-      <div className="flex flex-col justify-center items-center px-8 py-8">
+      <div className="flex flex-col justify-center items-center px-8 py-8 pb-24 md:pb-8">
         <PropertyType
           key={"propertyType"}
           formData={formData}

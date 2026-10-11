@@ -2,7 +2,7 @@ import { TaxAmountForm } from "./tax-amount-form";
 
 export default function ManageFeesPage() {
   return (
-    <div className="container  py-6 px-4 sm:px-6 lg:px-8">
+    <div className="container  py-6 pb-24 md:pb-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl ">
         <h1 className="text-2xl font-semibold text-gray-900 mb-2">
           Manage Additional Fees

@@ -44,8 +44,8 @@ export function DataTablePagination({
     onPageChange(p);
   };
   return (
-    <div className={cn("mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between", className)} data-testid="data-table-pagination" aria-busy={isLoading || undefined}>
-      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+    <div className={cn("mt-4 flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between", className)} data-testid="data-table-pagination" aria-busy={isLoading || undefined}>
+      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
         <span data-testid="pagination-summary">
           Showing {from}–{to} of {safeTotal} {itemLabel}
         </span>
@@ -62,7 +62,9 @@ export function DataTablePagination({
           </SelectContent>
         </Select>
       </div>
-      <nav role="navigation" aria-label="Pagination" className="flex items-center gap-1">
+      {/* Wraps (and buttons never shrink below 32px) instead of running past
+          the card, which also made guests/properties scroll sideways at 768. */}
+      <nav role="navigation" aria-label="Pagination" className="flex flex-wrap items-center gap-1 [&>*]:shrink-0">
         <Button variant="outline" size="icon" className="h-8 w-8" aria-label="First page" onClick={() => go(1)} disabled={current === 1 || isLoading} data-testid="page-first">
           <ChevronsLeft className="h-4 w-4" />
         </Button>

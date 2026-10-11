@@ -164,8 +164,11 @@ export default function DashboardPage() {
           </div>
 
           {/* Charts Section */}
+          {/* Card spans below are md:/lg:-prefixed: a bare col-span-4/3 in the
+              one-column phone grid created implicit tracks (cards 256 vs 240px
+              wide at 320), and Top Rated Hosts sat half-width at 768. */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
+            <Card className="md:col-span-2 lg:col-span-4">
               <CardHeader>
                 <CardTitle>Guest Arrivals</CardTitle>
                 <CardDescription>
@@ -194,7 +197,7 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
-            <Card className="col-span-3">
+            <Card className="md:col-span-2 lg:col-span-3">
               <CardHeader>
                 <CardTitle>Popular Property Types</CardTitle>
                 <CardDescription>
@@ -225,7 +228,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
+            <Card className="md:col-span-2 lg:col-span-4">
               <CardHeader>
                 <CardTitle>Revenue Trends</CardTitle>
                 <CardDescription>
@@ -258,7 +261,7 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
-            <Card className="col-span-3">
+            <Card className="md:col-span-2 lg:col-span-3">
               <CardHeader>
                 <CardTitle>Guest Satisfaction</CardTitle>
                 <CardDescription>
@@ -294,7 +297,7 @@ export default function DashboardPage() {
 
           {/* Current Bookings & Top Rated Hosts */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="col-span-2 overflow-hidden">
+            <Card className="md:col-span-2 overflow-hidden">
               <CardHeader>
                 <CardTitle>Current Bookings</CardTitle>
                 <CardDescription>
@@ -349,7 +352,7 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
-            <Card>
+            <Card className="md:col-span-2 lg:col-span-1">
               <CardHeader>
                 <CardTitle>Top Rated Hosts</CardTitle>
                 <CardDescription>
@@ -407,7 +410,7 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Action Cards */}
+          {/* Action Cards: labels may wrap — at 1024 the 110px buttons cut 'Manage Properties' by 11px */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -418,7 +421,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <Button
-                  className="w-full bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
+                  className="w-full bg-primaryGreen text-white hover:bg-brightGreen rounded-md h-auto min-h-10 whitespace-normal"
                   variant="outline"
                 >
                   View All Guests
@@ -434,7 +437,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <Button
-                  className="w-full bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
+                  className="w-full bg-primaryGreen text-white hover:bg-brightGreen rounded-md h-auto min-h-10 whitespace-normal"
                   variant="outline"
                 >
                   Manage Properties
@@ -450,7 +453,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <Button
-                  className="w-full bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
+                  className="w-full bg-primaryGreen text-white hover:bg-brightGreen rounded-md h-auto min-h-10 whitespace-normal"
                   variant="outline"
                 >
                   View Bookings
@@ -466,7 +469,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <Button
-                  className="w-full bg-primaryGreen text-white hover:bg-brightGreen rounded-md"
+                  className="w-full bg-primaryGreen text-white hover:bg-brightGreen rounded-md h-auto min-h-10 whitespace-normal"
                   variant="outline"
                 >
                   Generate Reports
