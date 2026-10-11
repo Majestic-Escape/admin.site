@@ -121,7 +121,7 @@ export default function BookingPage() {
   ];
 
   return (
-    <div className="min-h-screen font-poppins">
+    <div className="min-h-screen font-poppins pb-24 md:pb-0">
       <header className="flow-root bg-offWhite shadow-sm">
         <div className=" max-w-7xl mx-auto py-4 ml-10 sm:px-6 lg:px-8">
           <div className="text-center">
@@ -149,15 +149,19 @@ export default function BookingPage() {
           <div className="px-4 py-6 sm:px-0">
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 border rounded-xl p-4 shadow-lg">
               <div>
+                {/* The listing's own first photo (same fallback as the
+                    listings table); the hard-coded /sf-loft.jpg did not exist.
+                    The heading is the listing title — it used to print the
+                    photos array, an unbreakable URL that overflowed the card. */}
                 <Image
-                  src="/sf-loft.jpg"
-                  alt="Cozy SF Loft"
+                  src={fetchedData?.propertyId?.photos?.[0] || "/placeholder.svg"}
+                  alt={fetchedData?.propertyId?.title || "Property photo"}
                   width={600}
                   height={400}
                   className="rounded-xl"
                 />
-                <h3 className="mt-4 text-lg font-medium">
-                  {fetchedData?.propertyId?.photos}
+                <h3 className="mt-4 text-lg font-medium break-words">
+                  {fetchedData?.propertyId?.title}
                 </h3>
                 <p className="text-gray-600 text-sm">
                   {(fetchedData?.propertyId?.placeType?.charAt(0)?.toUpperCase() ?? "") +
@@ -212,8 +216,8 @@ export default function BookingPage() {
                 </button>
                 <div>
                   <h4 className="font-medium text-gray-700">Email</h4>
-                  <p className="text-gray-500">
-                    {fetchedData?.hostId?.email}hdjjdksjdlskdlsk
+                  <p className="text-gray-500 break-all">
+                    {fetchedData?.hostId?.email}
                   </p>
                 </div>
                 <div>

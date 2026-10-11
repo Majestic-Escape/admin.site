@@ -572,7 +572,9 @@ export default function BookingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <div className="flex">
+      {/* Stacks on phones; the host select is 220px until xl so the guest
+          search keeps a usable width at 768–1279 (it was <100px at 768). */}
+      <div className="flex flex-col gap-2 sm:flex-row">
         <Label htmlFor="search" className="sr-only">
           Search reservations
         </Label>
@@ -584,12 +586,12 @@ export default function BookingsPage() {
             className="bg-white rounded-md md:max-w-none"
           />
         </div>
-        <div className="pl-2">
+        <div className="sm:shrink-0">
           <Select value={selectHost} onValueChange={(v) => list.setFilter("host", v)}>
-            <SelectTrigger className="w-full sm:w-[250px] md:w-[380px] box-border bg-white" aria-label="Host" data-testid="filter-host">
+            <SelectTrigger className="w-full sm:w-[220px] xl:w-[380px] box-border bg-white" aria-label="Host" data-testid="filter-host">
               <SelectValue placeholder="Host Email" />
             </SelectTrigger>
-            <SelectContent className="w-full sm:w-[250px] md:w-[380px] max-w-[calc(100vw-2rem)] bg-white ">
+            <SelectContent className="w-full sm:w-[220px] xl:w-[380px] max-w-[calc(100vw-2rem)] bg-white ">
               <div className="overflow-x-scroll">
                 <div className="py-2 px-1">
                   <Input

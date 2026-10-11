@@ -279,8 +279,10 @@ export default function HostProfilePage() {
         ?.join(" ");
     };
     return (
-      <div className="p-8">
-        <div className="bg-white flex flex-col items-center px-4 py-6 min-h-0 box-border w-full max-w-3xl mx-auto">
+      // The page wrapper already pads the sides; p-8 here on phones left the
+      // details list only ~180px wide at 390.
+      <div className="py-4 sm:p-8">
+        <div className="bg-white flex flex-col items-center px-0 sm:px-4 py-6 min-h-0 box-border w-full max-w-3xl mx-auto">
           <div className="flex flex-col items-center space-y-4">
             <div className="relative overflow-hidden">
               {guestProfile?.profilePicture?.length != 0 ? (
@@ -714,8 +716,10 @@ export default function HostProfilePage() {
       </Tabs>
 
       {/* Search + Calendar */}
-      <div className="lg:flex flex-col md:flex-row md:items-center lg:space-x-4 space-y-3 md:space-y-0">
-        <div className="flex lg:w-[300px]">
+      {/* lg: the row wraps and the search keeps its 300px instead of being
+          squeezed to a ~24px stub by the fixed-width filters at 1024. */}
+      <div className="lg:flex lg:flex-wrap flex-col md:flex-row md:items-center lg:gap-4 space-y-3 md:space-y-0">
+        <div className="flex lg:w-[300px] lg:shrink-0">
           <Label htmlFor="search" className="sr-only">
             Search reservations
           </Label>

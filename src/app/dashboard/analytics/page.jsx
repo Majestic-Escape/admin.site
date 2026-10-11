@@ -159,7 +159,26 @@ const bookings = [
   },
 ];
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+// With many properties the legend grew to fill the 300px chart (12 entries =
+// 288px in a phone-width card) and sat on top of the pie. Capped, it scrolls,
+// and recharts sizes the pie from the remaining height.
+const PIE_LEGEND_STYLE = { maxHeight: 72, overflowY: "auto" };
 const AnalyticsPage = () => {
+  // Where the pie cards are narrow (below 360, and 768–1279 where they sit
+  // two-up) the outside "Name... 12%" labels ran past the card edges. There,
+  // show only the percentage; the Legend below each pie still names every slice.
+  const [compactPieLabels, setCompactPieLabels] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 359px), (min-width: 768px) and (max-width: 1279px)");
+    const sync = () => setCompactPieLabels(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  const pieLabel = ({ name, percent }) => {
+    const pct = `${Number.isFinite(percent) ? (percent * 100).toFixed(0) : 0}%`;
+    return compactPieLabels ? pct : `${name?.slice(0, 11) ?? ""}... ${pct}`;
+  };
   const today = new Date();
   const [dateRange, setDateRange] = useState({
     from: subDays(today, 7),
@@ -456,7 +475,9 @@ const AnalyticsPage = () => {
   const emails = [];
   return (
     <div className="container mx-auto  pt-10 pb-24 md:py-10 px-8 min-h-screen bg-gray-200 ">
-      <div className="flex justify-between">
+      {/* Stacks below sm: side by side, 'Export Report' touched the heading
+          (0px gap) and squeezed the description to 108px at 320. */}
+      <div className="flex flex-col items-start pb-5 sm:flex-row sm:justify-between sm:pb-0">
         <div className="pb-5">
           <h1 className="text-2xl font-semibold font-bricolage text-absoluteDark mb-2">
             Analytics Insights
@@ -473,7 +494,9 @@ const AnalyticsPage = () => {
       </div>
 
       <div className="flex flex-col md:flex-row justify-between md:items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
-        <div className="flex flex-col pb-5 md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+        {/* Four fixed-width filters (~890px) wrap instead of forcing the page to
+            scroll sideways in the ~497px column at 768–1100. */}
+        <div className="flex flex-col pb-5 md:flex-row md:flex-wrap gap-4">
           <Select onValueChange={handleDateRangeChange}>
             <SelectTrigger className="w-full md:w-[180px] bg-white">
               <SelectValue placeholder="Select time period" />
@@ -730,12 +753,10 @@ const AnalyticsPage = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  outerRadius={80}
+                  outerRadius="65%" /* scales with the card; a fixed 80px radius was cut off in ~150px-wide cards on phones */
                   fill="#8884d8"
                   dataKey={`booking`}
-                  label={({ name, percent }) =>
-                    `${name?.slice(0, 11) ?? ""}... ${Number.isFinite(percent) ? (percent * 100).toFixed(0) : 0}%`
-                  }
+                  label={pieLabel}
                 >
                   {propertyPieData.map((entry, index) => (
                     <Cell
@@ -745,7 +766,7 @@ const AnalyticsPage = () => {
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend />
+                <Legend wrapperStyle={PIE_LEGEND_STYLE} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -804,12 +825,10 @@ const AnalyticsPage = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  outerRadius={80}
+                  outerRadius="65%" /* scales with the card; a fixed 80px radius was cut off in ~150px-wide cards on phones */
                   fill="#8884d8"
                   dataKey={`guests`}
-                  label={({ name, percent }) =>
-                    `${name?.slice(0, 11) ?? ""}... ${Number.isFinite(percent) ? (percent * 100).toFixed(0) : 0}%`
-                  }
+                  label={pieLabel}
                 >
                   {propertyPieData.map((entry, index) => (
                     <Cell
@@ -819,7 +838,7 @@ const AnalyticsPage = () => {
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend />
+                <Legend wrapperStyle={PIE_LEGEND_STYLE} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>

@@ -142,7 +142,7 @@ export default function DetailView() {
   };
 
   return (
-    <main className="min-h-screen pt-16 md:pt-32 bg-white">
+    <main className="min-h-screen pt-16 md:pt-32 pb-24 md:pb-0 bg-white">
       <DialogModal
         choice={"Approve"}
         open={approveDialogOpen}

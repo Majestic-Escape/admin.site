@@ -43,16 +43,16 @@ export default function PropertyDetails({
 
     return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
   }
+  const cap = (v) => (typeof v === "string" && v ? v[0].toUpperCase() + v.slice(1) : "");
   return (
     <div className="max-w-7xl  mx-auto relative">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6 px-4 lg:px-0">
         <div className="lg:col-span-2">
           <div className="border-b pb-6 mb-6">
             <div className="flex items-center gap-4 mt-6">
-              {propertyDetails?.placeType[0].toUpperCase() +
-                propertyDetails?.placeType.slice(1)}{" "}
-              {propertyDetails?.propertyType[0].toUpperCase() +
-                propertyDetails?.propertyType.slice(1)}
+              {/* cap() returns "" for a missing value; undefined + undefined used
+                  to print "NaN NaN" when the listing could not be loaded. */}
+              {cap(propertyDetails?.placeType)} {cap(propertyDetails?.propertyType)}
             </div>
             <div className="flex items-center gap-4 mt-6">
               {propertyDetails?.guests} Guests | {propertyDetails?.beds} Beds |{" "}
