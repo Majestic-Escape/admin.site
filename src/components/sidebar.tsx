@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   Home,
@@ -30,9 +31,38 @@ import {
 } from "lucide-react";
 import { isSectionActive } from "@/lib/nav-active";
 
+// Keeps the active nav link in view when the page changes (landscape phones
+// show only a few rows). Rendered inside the list so it mounts together with
+// it: on the mobile sheet that is each time the sheet opens, and while the
+// sheet is closed there is no element, so the effect is a no-op. Keyed on the
+// pathname only; the footer is a flex sibling of the scroller (not an overlay),
+// so "nearest" already stops above it and scroll-py on the scroller adds air.
+function ScrollActiveLinkIntoView({
+  containerRef,
+  pathname,
+}: {
+  containerRef: { current: HTMLElement | null };
+  pathname: string;
+}) {
+  const { isMobile, state } = useSidebar();
+  React.useEffect(() => {
+    // Collapsed desktop sidebar is parked off-screen: do not scroll for it.
+    if (!isMobile && state === "collapsed") return;
+    // "bg-primaryGreen" is the activeClass below; links outside any section
+    // (e.g. booking details) match nothing.
+    const active = containerRef.current?.querySelector<HTMLElement>(
+      "a.bg-primaryGreen",
+    );
+    active?.scrollIntoView({ block: "nearest", behavior: "auto" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+  return null;
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const isActive = (href: string) => isSectionActive(pathname, href);
+  const listRef = React.useRef<HTMLDivElement>(null);
 
   const activeClass = "bg-primaryGreen  text-white hover:bg-brightGreen";
   //bg-primary/10 text-primary font-medium";
@@ -52,7 +82,8 @@ export function Sidebar() {
           </span>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent ref={listRef} className="sidebar-scroll-cue scroll-py-2">
+        <ScrollActiveLinkIntoView containerRef={listRef} pathname={pathname} />
         <SidebarMenu>
           <SidebarMenuItem>
             <Button variant="ghost" className="w-full justify-start" asChild>

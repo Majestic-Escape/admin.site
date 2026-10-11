@@ -280,7 +280,7 @@ export default function HostsPage() {
                     setCurrentPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[max(180px,11.25rem)] max-w-[calc(100vw-2rem)]">
                     <SelectValue placeholder="Rows per page" />
                   </SelectTrigger>
                   <SelectContent>

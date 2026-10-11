@@ -385,9 +385,12 @@ export default function LoginForm() {
         <div className="text-left text-sm">
           <p className="text-gray-600">
             Facing issues in signing in?{" "}
-            <Link href="/help-center" className="text-primary underline">
+            <a
+              href="mailto:info@majesticescape.in"
+              className="text-primary underline"
+            >
               Contact support
-            </Link>
+            </a>
           </p>
         </div>
       </form>

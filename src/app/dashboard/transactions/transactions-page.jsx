@@ -298,7 +298,7 @@ export default function TransactionsPage() {
             />
           </div>
           <Select value={statusFilter} onValueChange={(v) => list.setFilter("status", v)}>
-            <SelectTrigger className="w-full md:w-[170px] bg-white" aria-label="Status" data-testid="filter-status">
+            <SelectTrigger className="w-full md:w-[max(170px,10.625rem)] md:max-w-[calc(100vw-2rem)] bg-white" aria-label="Status" data-testid="filter-status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
