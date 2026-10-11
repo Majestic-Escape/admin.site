@@ -24,6 +24,7 @@ import {
   Contact,
   Headset,
   Settings,
+  CalendarClock,
 } from "lucide-react";
 import {
   Sheet,
@@ -102,6 +103,13 @@ export default function AdminBottomNavigation() {
                 >
                   <Book className="w-4 h-4" />
                   <span>Booking History</span>
+                </Link>
+                <Link
+                  href="/dashboard/calendar-sync"
+                  className="flex items-center space-x-2 text-sm"
+                >
+                  <CalendarClock className="w-4 h-4" />
+                  <span>Calendar sync</span>
                 </Link>
                 <Link
                   href="/dashboard/host-history"
