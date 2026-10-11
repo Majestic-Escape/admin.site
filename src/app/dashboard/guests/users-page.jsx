@@ -160,7 +160,7 @@ export default function UsersPage() {
             <CardContent>
               <DataTableToolbar search={q} onSearchChange={(v) => list.setFilter("q", v)} searchPlaceholder="Search by name, e-mail or phone" onReset={list.reset} isDirty={list.isDirty} resultCount={loading ? undefined : total}>
                 <Select value={status} onValueChange={(v) => list.setFilter("status", v)}>
-                  <SelectTrigger className="h-9 w-full md:w-[150px]" aria-label="Status" data-testid="filter-status">
+                  <SelectTrigger className="h-9 w-full md:w-[max(150px,9.375rem)] md:max-w-[calc(100vw-2rem)]" aria-label="Status" data-testid="filter-status">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -171,7 +171,7 @@ export default function UsersPage() {
                 </Select>
                 <Select value={role} onValueChange={(v) => list.setFilter("role", v)}>
                   {/* 170px: 'Hosts and guests' was cut by 12px at 150px */}
-                  <SelectTrigger className="h-9 w-full md:w-[170px]" aria-label="Role" data-testid="filter-role">
+                  <SelectTrigger className="h-9 w-full md:w-[max(170px,10.625rem)] md:max-w-[calc(100vw-2rem)]" aria-label="Role" data-testid="filter-role">
                     <SelectValue placeholder="Role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -181,7 +181,7 @@ export default function UsersPage() {
                   </SelectContent>
                 </Select>
                 <Select value={segment} onValueChange={(v) => list.setFilter("segment", v)}>
-                  <SelectTrigger className="h-9 w-full md:w-[190px]" aria-label="Segment" data-testid="filter-segment">
+                  <SelectTrigger className="h-9 w-full md:w-[max(190px,11.875rem)] md:max-w-[calc(100vw-2rem)]" aria-label="Segment" data-testid="filter-segment">
                     <SelectValue placeholder="Segment" />
                   </SelectTrigger>
                   <SelectContent>

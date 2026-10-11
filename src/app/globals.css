@@ -188,3 +188,18 @@ body, html {
   background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
   background-attachment: local, local, scroll, scroll;
 }
+
+/* Vertical twin of .table-scroll-cue for the admin sidebar list. On landscape
+   phones the nav is taller than the viewport and touch browsers hide the
+   scrollbar, so nothing hinted that more items sat above/below. Same
+   local/scroll trick, painted over the sidebar background token. */
+.sidebar-scroll-cue {
+  background:
+    linear-gradient(to bottom, hsl(var(--sidebar-background)) 30%, hsl(var(--sidebar-background) / 0)) center top,
+    linear-gradient(to top, hsl(var(--sidebar-background)) 30%, hsl(var(--sidebar-background) / 0)) center bottom,
+    radial-gradient(farthest-side at 50% 0, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0)) center top,
+    radial-gradient(farthest-side at 50% 100%, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0)) center bottom;
+  background-repeat: no-repeat;
+  background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+  background-attachment: local, local, scroll, scroll;
+}

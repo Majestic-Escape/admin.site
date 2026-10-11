@@ -80,7 +80,7 @@ export default function BookingPage() {
     return (
       <div className="min-h-screen flex items-center justify-center font-poppins pt-24">
         You are not authorized to access this page. &nbsp;{" "}
-        <Link href="/login">
+        <Link href="/">
           <u>
             <b>Click Here</b>
           </u>

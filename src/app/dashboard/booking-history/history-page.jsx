@@ -588,7 +588,7 @@ export default function BookingsPage() {
         </div>
         <div className="sm:shrink-0">
           <Select value={selectHost} onValueChange={(v) => list.setFilter("host", v)}>
-            <SelectTrigger className="w-full sm:w-[220px] xl:w-[380px] box-border bg-white" aria-label="Host" data-testid="filter-host">
+            <SelectTrigger className="w-full sm:w-[max(220px,13.75rem)] sm:max-w-[calc(100vw-2rem)] xl:w-[max(380px,23.75rem)] xl:max-w-[calc(100vw-2rem)] box-border bg-white" aria-label="Host" data-testid="filter-host">
               <SelectValue placeholder="Host Email" />
             </SelectTrigger>
             <SelectContent className="w-full sm:w-[220px] xl:w-[380px] max-w-[calc(100vw-2rem)] bg-white ">
@@ -665,7 +665,7 @@ export default function BookingsPage() {
             </DropdownMenuContent>
           </DropdownMenu>
           <Select>
-            <SelectTrigger className="w-[180px] bg-white rounded-md">
+            <SelectTrigger className="w-[max(180px,11.25rem)] max-w-[calc(100vw-2rem)] bg-white rounded-md">
               <SelectValue className="bg-white" placeholder="Bulk Actions" />
             </SelectTrigger>
             <SelectContent>
