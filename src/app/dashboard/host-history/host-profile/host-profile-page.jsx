@@ -738,7 +738,7 @@ export default function HostProfilePage() {
               value={selectPropertyType}
               onValueChange={setselectPropertyType}
             >
-              <SelectTrigger className="lg:w-[300px] box-border bg-white">
+              <SelectTrigger className="lg:w-[max(300px,18.75rem)] lg:max-w-[calc(100vw-2rem)] box-border bg-white">
                 <SelectValue placeholder="Property Type" />
               </SelectTrigger>
               <SelectContent className="w-full md:max-h-[200px] max-w-[calc(100vw-2rem)] bg-white ">
@@ -771,7 +771,7 @@ export default function HostProfilePage() {
           </div>
           <div className="pt-4 md:pl-3 md:pt-0 ">
             <Select value={selectPlaceType} onValueChange={setSelectPlaceType}>
-              <SelectTrigger className="lg:w-[200px]  box-border bg-white">
+              <SelectTrigger className="lg:w-[max(200px,12.5rem)] lg:max-w-[calc(100vw-2rem)]  box-border bg-white">
                 <SelectValue placeholder="Place Type" />
               </SelectTrigger>
               <SelectContent className="w-full max-w-[calc(100vw-2rem)] bg-white ">

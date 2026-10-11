@@ -614,7 +614,7 @@ export default function ProfilePage() {
 
         <div className="overflow-hidden sm:hidden">
           <Select value={activeTab} onValueChange={setActiveTab}>
-            <SelectTrigger className="w-full sm:w-[250px] md:w-[380px] box-border bg-white">
+            <SelectTrigger className="w-full sm:w-[max(250px,15.625rem)] sm:max-w-[calc(100vw-2rem)] md:w-[max(380px,23.75rem)] md:max-w-[calc(100vw-2rem)] box-border bg-white">
               <SelectValue placeholder="Host Email" />
             </SelectTrigger>
             <SelectContent className="w-full sm:w-[250px] md:w-[380px] max-w-[calc(100vw-2rem)] bg-white ">

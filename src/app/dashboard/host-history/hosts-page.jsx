@@ -602,7 +602,7 @@ export default function BookingsPage() {
             </DropdownMenuContent>
           </DropdownMenu>
           <Select>
-            <SelectTrigger className="w-[180px] bg-white rounded-md">
+            <SelectTrigger className="w-[max(180px,11.25rem)] max-w-[calc(100vw-2rem)] bg-white rounded-md">
               <SelectValue className="bg-white" placeholder="Bulk Actions" />
             </SelectTrigger>
             <SelectContent>
