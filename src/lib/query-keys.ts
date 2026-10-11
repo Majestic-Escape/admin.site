@@ -17,6 +17,7 @@ export const queryKeys = {
   adminKyc: (hostId: Id) => ["adminKyc", hostId] as const,
   adminKycDocuments: (hostId: Id) => ["adminKycDocuments", hostId] as const,
   siteHero: ["siteHero"] as const,
+  calendarSyncOverview: ["calendarSyncOverview"] as const,
   // `identity` fingerprints the admin session (never the token itself), so
   // a different admin signing in on this tab never sees the previous name.
   adminProfile: (identity: string | null) => ["adminProfile", identity] as const,
