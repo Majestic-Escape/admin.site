@@ -50,7 +50,7 @@ export function DataTablePagination({
           Showing {from}–{to} of {safeTotal} {itemLabel}
         </span>
         <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
-          <SelectTrigger className="h-8 w-[130px]" aria-label="Rows per page" data-testid="page-size">
+          <SelectTrigger className="h-8 w-[max(130px,8.125rem)] max-w-[calc(100vw-2rem)]" aria-label="Rows per page" data-testid="page-size">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

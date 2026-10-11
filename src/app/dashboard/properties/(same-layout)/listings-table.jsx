@@ -831,7 +831,7 @@ export function ListingsTable() {
           value={statusFilter}
           onValueChange={handleStatusChange}
         >
-          <SelectTrigger className="bg-white w-[180px] md:ml-2" aria-label="Status" data-testid="filter-status">
+          <SelectTrigger className="bg-white w-[max(180px,11.25rem)] max-w-[calc(100vw-2rem)] md:ml-2" aria-label="Status" data-testid="filter-status">
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>

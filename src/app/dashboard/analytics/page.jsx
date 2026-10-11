@@ -498,7 +498,7 @@ const AnalyticsPage = () => {
             scroll sideways in the ~497px column at 768–1100. */}
         <div className="flex flex-col pb-5 md:flex-row md:flex-wrap gap-4">
           <Select onValueChange={handleDateRangeChange}>
-            <SelectTrigger className="w-full md:w-[180px] bg-white">
+            <SelectTrigger className="w-full md:w-[max(180px,11.25rem)] md:max-w-[calc(100vw-2rem)] bg-white">
               <SelectValue placeholder="Select time period" />
             </SelectTrigger>
             <SelectContent>
@@ -554,7 +554,7 @@ const AnalyticsPage = () => {
           </Popover>
 
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-full md:w-[180px] bg-white">
+            <SelectTrigger className="w-full md:w-[max(180px,11.25rem)] md:max-w-[calc(100vw-2rem)] bg-white">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -568,7 +568,7 @@ const AnalyticsPage = () => {
           </Select>
 
           <Select value={currentHost} onValueChange={setCurrentHost}>
-            <SelectTrigger className="w-full md:w-[200px] bg-white">
+            <SelectTrigger className="w-full md:w-[max(200px,12.5rem)] md:max-w-[calc(100vw-2rem)] bg-white">
               <SelectValue placeholder="Select Property" />
             </SelectTrigger>
             <SelectContent>
