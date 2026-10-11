@@ -98,6 +98,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const BOOKING_FILTERS = { q: "", status: "all", from: "", to: "" };
 const isoDay = (d) => (d instanceof Date && !isNaN(d) ? format(d, "yyyy-MM-dd") : "");
 const fromIso = (v) => { if (!v) return null; const d = new Date(`${v}T00:00:00`); return isNaN(d) ? null : d; };
+// SyncGuard attention reason "ota_conflict": which site reported the nights.
+const OTA_LABELS = { AIRBNB: "Airbnb", BOOKING_COM: "Booking.com", AGODA: "Agoda", VRBO: "Vrbo", MAKE_MY_TRIP: "MakeMyTrip", GOIBIBO: "Goibibo", GENERIC_ICAL: "A connected calendar" };
+const otaChannelLabel = (c) => OTA_LABELS[c] || "Another booking site";
 
 export default function BookingsPage() {
   const router = useRouter();
@@ -664,7 +667,9 @@ export default function BookingsPage() {
                       title={
                         booking.needsAttention === "amount_mismatch"
                           ? "Captured amount differs from the server quote"
-                          : "Dates were taken before the payment completed"
+                          : booking.needsAttention === "ota_conflict"
+                            ? "Another booking site reports these nights booked too (calendar sync)"
+                            : "Dates were taken before the payment completed"
                       }
                     >
                       Needs attention
@@ -1027,7 +1032,9 @@ export default function BookingsPage() {
                 <span className="ml-2 text-red-700">
                   {item.needsAttention === "amount_mismatch"
                     ? `captured ${(item?.attentionDetails?.capturedPaise ?? 0) / 100} vs quote ${(item?.attentionDetails?.expectedPaise ?? 0) / 100}`
-                    : "dates taken during payment"}
+                    : item.needsAttention === "ota_conflict"
+                      ? `${otaChannelLabel(item?.attentionDetails?.channel)} also shows these nights booked${item?.attentionDetails?.possibleEcho ? " (may be a mirror — check)" : ""}`
+                      : "dates taken during payment"}
                 </span>
               </li>
             ))}
