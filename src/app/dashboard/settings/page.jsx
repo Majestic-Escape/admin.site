@@ -21,6 +21,7 @@ import { renameMe } from "@/lib/admin-api";
 import { queryKeys } from "@/lib/query-keys";
 import { adminFullName, useAdminProfile } from "@/hooks/use-admin-profile";
 import { HeroBannerSettings } from "./_components/hero-banner-settings";
+import { ChatFeatureSwitches } from "./_components/chat-feature-switches";
 
 const SUPPORT_URL =
   process.env.NEXT_PUBLIC_SUPPORT_SOCKET_URL || "http://localhost:3003";
@@ -302,8 +303,7 @@ export default function SettingsPage() {
                     <p>
                       <span className="font-medium">AI responses are OFF.</span>{" "}
                       The AI Assistant tab is hidden and no AI costs are being
-                      incurred. Customers can still reach your team through
-                      Support Chat.
+                      incurred. Support Chat is a separate switch, below.
                     </p>
                   </div>
                 )}
@@ -312,7 +312,10 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* after the compact kill switch, so it is never buried below the editor */}
+        {/* Support Chat + guest↔host Messaging switches (same service, same guard) */}
+        <ChatFeatureSwitches />
+
+        {/* after the compact kill switches, so it is never buried below the editor */}
         <HeroBannerSettings />
       </div>
     </div>
