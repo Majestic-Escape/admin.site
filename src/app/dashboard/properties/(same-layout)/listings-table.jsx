@@ -508,6 +508,22 @@ export function ListingsTable() {
         },
       },
       {
+        id: "host",
+        accessorFn: (row) => [row.host?.firstName, row.host?.lastName].filter(Boolean).join(" "),
+        header: () => <SortableHeader label="Host" sortKey="hostName" sort={list} onSort={list.toggleSort} />,
+        cell: ({ getValue }) => {
+          const name = getValue();
+          // No name = the host account no longer exists.
+          return name ? (
+            <span title={name} className="block max-w-[180px] truncate whitespace-nowrap">
+              {name}
+            </span>
+          ) : (
+            <span className="text-muted-foreground" title="Host account not found">-</span>
+          );
+        },
+      },
+      {
         accessorKey: "propertyType",
         header: () => <SortableHeader label="Property Type" sortKey="propertyType" sort={list} onSort={list.toggleSort} />,
       },
@@ -604,9 +620,11 @@ export function ListingsTable() {
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem
                   data-no-navigate="true"
+                  // no host account (Host shows "-"): nothing to open
+                  disabled={!listing.host?._id}
                   onClick={() =>
                     router.push(
-                      `/dashboard/kyc-details/${listing.host._id}?firstName=${listing.host.firstName}&lastName=${listing.host.lastName}`,
+                      `/dashboard/kyc-details/${listing.host._id}?firstName=${encodeURIComponent(listing.host.firstName ?? "")}&lastName=${encodeURIComponent(listing.host.lastName ?? "")}`,
                     )
                   }
                 >
@@ -819,11 +837,12 @@ export function ListingsTable() {
       </div>
 
       {/* ----------- FILTERS & COLUMN VISIBILITY ----------- */}
-      <div className="flex flex-col gap-2 py-4 md:flex-row md:items-center">
+      {/* wraps at tablet widths: without it the search box was squeezed to its icon */}
+      <div className="flex flex-col gap-2 py-4 md:flex-row md:flex-wrap md:items-center md:gap-x-4">
         <DataTableSearch
           value={searchTerm}
           onChange={(v) => list.setFilter("q", v)}
-          placeholder="Search using title or email..."
+          placeholder="Search title, host name or email..."
           className="bg-white rounded-md"
         />
         <Select
@@ -831,7 +850,7 @@ export function ListingsTable() {
           value={statusFilter}
           onValueChange={handleStatusChange}
         >
-          <SelectTrigger className="bg-white w-[max(180px,11.25rem)] max-w-[calc(100vw-2rem)] md:ml-2" aria-label="Status" data-testid="filter-status">
+          <SelectTrigger className="bg-white w-[max(180px,11.25rem)] max-w-[calc(100vw-2rem)]" aria-label="Status" data-testid="filter-status">
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>
@@ -848,12 +867,12 @@ export function ListingsTable() {
             Reset
           </Button>
         ) : null}
-        <span className="text-sm text-muted-foreground md:ml-auto" data-testid="table-count">
+        <span className="whitespace-nowrap text-sm text-muted-foreground md:ml-auto" data-testid="table-count">
           {loading ? "" : `${filteredTotal} ${filteredTotal === 1 ? "listing" : "listings"}`}
         </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="md:ml-2 bg-white">
+            <Button variant="outline" className="bg-white">
               Columns <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

@@ -4,7 +4,7 @@
 // every dashboard table; the API contract it targets is server.me
 // utils/listQuery.js (?page=&limit=&sort=key:dir + the page's own filters).
 import { useCallback, useMemo } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export const PAGE_SIZES = [10, 20, 50, 100];
 
@@ -20,7 +20,6 @@ function toInt(value, fallback) {
  * @param {Record<string,string>} [options.filters]  filter name → default value
  */
 export function useListParams({ defaultSort, defaultPageSize = 10, filters = {} } = {}) {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -40,7 +39,9 @@ export function useListParams({ defaultSort, defaultPageSize = 10, filters = {} 
 
   const write = useCallback(
     (patch, { resetPage = false } = {}) => {
-      const next = new URLSearchParams(searchParams.toString());
+      // From the address bar, not the last rendered params: two changes in a
+      // row (type a search, then pick a status) must both land.
+      const next = new URLSearchParams(window.location.search);
       for (const [k, v] of Object.entries(patch)) {
         const isDefault =
           v === undefined ||
@@ -55,9 +56,11 @@ export function useListParams({ defaultSort, defaultPageSize = 10, filters = {} 
       }
       if (resetPage) next.delete("page");
       const qs = next.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+      // Next keeps useSearchParams in sync with history.replaceState: the URL
+      // changes at once, with no route round trip per filter change.
+      window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
     },
-    [router, pathname, searchParams, defaultPageSize, defaultSort, filters],
+    [pathname, defaultPageSize, defaultSort, filters],
   );
 
   const setPage = useCallback((page) => write({ page }), [write]);
@@ -74,7 +77,7 @@ export function useListParams({ defaultSort, defaultPageSize = 10, filters = {} 
   );
   const setFilter = useCallback((name, value) => write({ [name]: value }, { resetPage: true }), [write]);
   const setFilters = useCallback((patch) => write(patch, { resetPage: true }), [write]);
-  const reset = useCallback(() => router.replace(pathname, { scroll: false }), [router, pathname]);
+  const reset = useCallback(() => window.history.replaceState(null, "", pathname), [pathname]);
   const isDirty = useMemo(() => {
     if (state.page !== 1 || state.pageSize !== defaultPageSize || (state.sort && state.sort !== defaultSort)) return true;
     return Object.entries(filters).some(([k, fallback]) => state.filters[k] !== fallback);

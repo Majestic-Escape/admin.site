@@ -2,7 +2,7 @@
 // The row above every dashboard table: a debounced search box, the page's
 // own filters (children) and a Reset that clears search, filters, sort and
 // page in one go.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,11 +19,31 @@ export function useDebouncedValue(value, delay = 300) {
 
 export function DataTableSearch({ value, onChange, placeholder = "Search…", className, delay = 300 }) {
   const [draft, setDraft] = useState(value ?? "");
-  useEffect(() => setDraft(value ?? ""), [value]);
-  const debounced = useDebouncedValue(draft, delay);
+  // The text this box last sent up (or took from the URL). The URL catching
+  // up with it must not overwrite what was typed since (that dropped
+  // keystrokes on a slow route change); only a change from elsewhere (Reset,
+  // a link) replaces the text.
+  const sent = useRef(value ?? "");
+  const onChangeRef = useRef(onChange);
   useEffect(() => {
-    if (debounced !== (value ?? "")) onChange(debounced);
-  }, [debounced]); // eslint-disable-line react-hooks/exhaustive-deps
+    onChangeRef.current = onChange;
+  });
+  useEffect(() => {
+    const v = value ?? "";
+    if (v === sent.current) return;
+    sent.current = v;
+    setDraft(v);
+  }, [value]);
+  // Debounced against what was last sent (not the URL), so retyping the text
+  // a Reset just cleared still searches.
+  useEffect(() => {
+    if (draft === sent.current) return;
+    const t = setTimeout(() => {
+      sent.current = draft;
+      onChangeRef.current(draft);
+    }, delay);
+    return () => clearTimeout(t);
+  }, [draft, delay]);
   return (
     <div className={cn("relative w-full md:max-w-sm", className)}>
       <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
